@@ -16,17 +16,17 @@
     // Eure AGOL-Organisations-URL eintragen, z.B. "https://esri-de.maps.arcgis.com"
     esriConfig.portalUrl = "https://esridech.maps.arcgis.com";
 
-    // OAuth vorübergehend deaktiviert, bis CORS-Freigabe durch Admin erfolgt ist
-    // const [OAuthInfo, esriId] = await $arcgis.import([
-    //   "esri/identity/OAuthInfo",
-    //   "esri/identity/IdentityManager",
-    // ]);
-    // const oauthInfo = new OAuthInfo({
-    //   appId: "QC06QMcg1G0I5yRJ",
-    //   portalUrl: esriConfig.portalUrl,
-    //   popup: true,
-    // });
-    // esriId.registerOAuthInfos([oauthInfo]);
+    // OAuth-Registrierung für SSO-fähigen Login
+    const [OAuthInfo, esriId] = await $arcgis.import([
+      "esri/identity/OAuthInfo",
+      "esri/identity/IdentityManager",
+    ]);
+    const oauthInfo = new OAuthInfo({
+      appId: "QC06QMcg1G0I5yRJ",
+      portalUrl: esriConfig.portalUrl,
+      popup: true,
+    });
+    esriId.registerOAuthInfos([oauthInfo]);
 
     const mapEl = document.createElement("arcgis-map");
     mapEl.setAttribute("item-id", "a03834e50de2438c89b93ca0f10f531f");
