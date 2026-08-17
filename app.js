@@ -84,8 +84,8 @@ function setResultsHint(text) {
 async function runCheck(mapEl, punkt) {
   setResultsHint("Prüfung läuft …");
 
-  const [geometryEngineAsync] = await $arcgis.import(["esri/geometry/geometryEngineAsync"]);
-  const buffer = await geometryEngineAsync.geodesicBuffer(punkt, PRUEFRADIUS_METER, "meters");
+  const [geometryEngine] = await $arcgis.import(["esri/geometry/geometryEngine"]);
+  const buffer = geometryEngine.geodesicBuffer(punkt, PRUEFRADIUS_METER, "meters");
 
   const aktiveLayerNamen = [...document.querySelectorAll("#criteria-panel input[type=checkbox]:checked")]
     .map((el) => el.dataset.layer);
