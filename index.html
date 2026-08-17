@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>NRW Basemap – Konfliktprüfung</title>
+  <script type="module" src="https://js.arcgis.com/5.1/"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="map-container"></div>
+
+  <script type="module">
+    const [esriConfig, OAuthInfo, esriId] = await $arcgis.import([
+      "esri/config",
+      "esri/identity/OAuthInfo",
+      "esri/identity/IdentityManager",
+    ]);
+
+    // Eure AGOL-Organisations-URL eintragen, z.B. "https://esri-de.maps.arcgis.com"
+    esriConfig.portalUrl = "https://esridech.maps.arcgis.com";
+
+    // Client ID aus der eben erstellten OAuth-App-Registrierung eintragen
+    const oauthInfo = new OAuthInfo({
+      appId: "QC06QMcg1G0I5yRJ",
+      portalUrl: esriConfig.portalUrl,
+      popup: true,
+    });
+    esriId.registerOAuthInfos([oauthInfo]);
+
+    // Erst NACHDEM alles registriert ist, die Karte erzeugen
+    const mapEl = document.createElement("arcgis-map");
+    mapEl.setAttribute("item-id", "a03834e50de2438c89b93ca0f10f531f");
+    mapEl.setAttribute("zoom", "10");
+    document.getElementById("map-container").appendChild(mapEl);
+  </script>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
