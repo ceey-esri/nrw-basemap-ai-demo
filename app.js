@@ -8,24 +8,51 @@ const defaultCriteriaByType = {
 
 const PRUEFRADIUS_METER = 100;
 
-let letzterKlickpunkt = null;
-let markerLayer = null;
+let selectedVorhabenTyp = null;
+let selectedGeometryType = null;
+let letzteEingabegeometrie = null;
+let sketchViewModel = null;
+let sketchLayer = null;
+let aktuelleErgebnisse = []; // für PDF/Mail-Export gemerkt
 
-// Vorhaben-Typ ändert die Kriterien-Vorauswahl
+// --- Vorhaben-Typ-Auswahl (Buttons statt Dropdown) ---
+document.querySelectorAll("#vorhaben-auswahl .option-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#vorhaben-auswahl .option-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedVorhabenTyp = btn.dataset.vorhaben;
+    updateCriteriaFromVorhaben();
+  });
+});
+
 function updateCriteriaFromVorhaben() {
-  const typ = document.getElementById("vorhaben-typ").value;
-  const preset = defaultCriteriaByType[typ] || [];
-  document.querySelectorAll("#criteria-panel input[type=checkbox]").forEach((checkbox) => {
-    checkbox.checked = preset.includes(checkbox.dataset.layer);
+  const preset = defaultCriteriaByType[selectedVorhabenTyp] || [];
+  document.querySelectorAll("#criteria-panel-section input, .panel-section input[type=checkbox]").forEach((checkbox) => {
+    if (checkbox.dataset.layer) {
+      checkbox.checked = preset.includes(checkbox.dataset.layer);
+    }
   });
 }
 
-document.getElementById("vorhaben-typ").addEventListener("change", updateCriteriaFromVorhaben);
-updateCriteriaFromVorhaben(); // beim Laden einmal ausführen
+// --- Geometrie-Typ-Auswahl (Punkt / Linie / Fläche) ---
+document.querySelectorAll("#geometrie-auswahl .option-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#geometrie-auswahl .option-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedGeometryType = btn.dataset.geometrie;
 
-// Karte initialisieren, sobald sie bereit ist
+    if (sketchViewModel) {
+      sketchLayer.removeAll();
+      letzteEingabegeometrie = null;
+      document.getElementById("run-check-btn").disabled = true;
+      document.getElementById("geometrie-hint").textContent = "Jetzt auf der Karte zeichnen …";
+      sketchViewModel.create(selectedGeometryType);
+    }
+  });
+});
+
+// --- Karte initialisieren ---
 async function initMapInteraction() {
-  // Kurz warten, falls das Karten-Setup-Skript in index.html noch nicht fertig ist
   let versuche = 0;
   while (!window.__mapEl && versuche < 20) {
     await new Promise((r) => setTimeout(r, 100));
@@ -39,56 +66,70 @@ async function initMapInteraction() {
   }
 
   await mapEl.viewOnReady();
-  console.log("Karte ist bereit – Klicks sollten jetzt funktionieren.");
+  console.log("Karte ist bereit.");
 
-  const [GraphicsLayer, Graphic] = await $arcgis.import([
+  const [GraphicsLayer, SketchViewModel] = await $arcgis.import([
     "esri/layers/GraphicsLayer",
-    "esri/Graphic",
+    "esri/widgets/Sketch/SketchViewModel",
   ]);
-  markerLayer = new GraphicsLayer({ title: "Prüfpunkt" });
-  mapEl.map.add(markerLayer);
 
-  mapEl.addEventListener("arcgisViewClick", async (event) => {
-    letzterKlickpunkt = event.detail.mapPoint;
-    console.log("Klick registriert:", letzterKlickpunkt);
+  sketchLayer = new GraphicsLayer({ title: "Eingabegeometrie" });
+  mapEl.map.add(sketchLayer);
 
-    // Vorherigen Marker entfernen, neuen setzen
-    markerLayer.removeAll();
-    const markerGraphic = new Graphic({
-      geometry: letzterKlickpunkt,
-      symbol: {
-        type: "simple-marker",
-        color: [226, 75, 74],
-        size: 12,
-        outline: { color: [255, 255, 255], width: 2 },
-      },
-    });
-    markerLayer.add(markerGraphic);
+  sketchViewModel = new SketchViewModel({
+    view: mapEl.view,
+    layer: sketchLayer,
+    pointSymbol: {
+      type: "simple-marker",
+      color: [226, 75, 74],
+      size: 12,
+      outline: { color: [255, 255, 255], width: 2 },
+    },
+    polylineSymbol: {
+      type: "simple-line",
+      color: [226, 75, 74],
+      width: 3,
+    },
+    polygonSymbol: {
+      type: "simple-fill",
+      color: [226, 75, 74, 0.3],
+      outline: { color: [226, 75, 74], width: 2 },
+    },
+  });
 
-    setResultsHint(`Punkt gesetzt (${letzterKlickpunkt.longitude.toFixed(4)}, ${letzterKlickpunkt.latitude.toFixed(4)}). Jetzt "Prüfung starten" klicken.`);
+  sketchViewModel.on("create-complete", (event) => {
+    letzteEingabegeometrie = event.graphic.geometry;
+    document.getElementById("run-check-btn").disabled = false;
+    document.getElementById("geometrie-hint").textContent = "Geometrie gesetzt. Kriterien wählen und Prüfung starten.";
   });
 
   document.getElementById("run-check-btn").addEventListener("click", () => {
-    if (!letzterKlickpunkt) {
-      setResultsHint("Bitte zuerst einen Punkt auf der Karte setzen.");
+    if (!letzteEingabegeometrie) {
+      setResultsHint("Bitte zuerst eine Geometrie auf der Karte zeichnen.");
       return;
     }
-    runCheck(mapEl, letzterKlickpunkt);
+    runCheck(mapEl, letzteEingabegeometrie);
   });
+
+  document.getElementById("pdf-btn").addEventListener("click", () => erstellePdfBericht());
+  document.getElementById("mail-btn").addEventListener("click", () => sendePerMail());
 }
 
 function setResultsHint(text) {
   document.getElementById("results-list").innerHTML = `<p class="hint">${text}</p>`;
 }
 
-async function runCheck(mapEl, punkt) {
+// --- Prüfung durchführen ---
+async function runCheck(mapEl, geometrie) {
   setResultsHint("Prüfung läuft …");
+  document.getElementById("export-buttons").hidden = true;
 
   const [geometryEngine] = await $arcgis.import(["esri/geometry/geometryEngine"]);
-  const buffer = geometryEngine.geodesicBuffer(punkt, PRUEFRADIUS_METER, "meters");
+  const buffer = geometryEngine.geodesicBuffer(geometrie, PRUEFRADIUS_METER, "meters");
 
-  const aktiveLayerNamen = [...document.querySelectorAll("#criteria-panel input[type=checkbox]:checked")]
-    .map((el) => el.dataset.layer);
+  const aktiveLayerNamen = [...document.querySelectorAll(".panel-section input[type=checkbox]:checked")]
+    .map((el) => el.dataset.layer)
+    .filter(Boolean);
 
   if (aktiveLayerNamen.length === 0) {
     setResultsHint("Bitte mindestens ein Kriterium auswählen.");
@@ -106,11 +147,14 @@ async function runCheck(mapEl, punkt) {
       continue;
     }
 
+    // Layer vor der neuen Prüfung zurücksetzen
+    layer.definitionExpression = null;
+    layer.visible = false;
+
     try {
-      if (!layer.queryFeatures) {
-        // z.B. Gruppen-Layer oder Basemap-Layer ohne Query-Fähigkeit
-        continue;
-      }
+      if (!layer.queryFeatures) continue;
+      await layer.load();
+
       const query = layer.createQuery();
       query.geometry = buffer;
       query.spatialRelationship = "intersects";
@@ -119,6 +163,14 @@ async function runCheck(mapEl, punkt) {
 
       const result = await layer.queryFeatures(query);
       const anzahl = result.features.length;
+
+      if (anzahl > 0) {
+        // Nur die relevanten (gefundenen) Features einblenden
+        const idField = layer.objectIdField;
+        const ids = result.features.map((f) => f.attributes[idField]);
+        layer.definitionExpression = `${idField} IN (${ids.join(",")})`;
+        layer.visible = true;
+      }
 
       ergebnisse.push({
         name: layerName,
@@ -133,7 +185,12 @@ async function runCheck(mapEl, punkt) {
     }
   }
 
+  aktuelleErgebnisse = ergebnisse;
   renderResults(ergebnisse);
+
+  if (ergebnisse.length > 0) {
+    document.getElementById("export-buttons").hidden = false;
+  }
 }
 
 function renderResults(ergebnisse) {
@@ -155,6 +212,63 @@ function renderResults(ergebnisse) {
   if (ergebnisse.length === 0) {
     setResultsHint("Keine Ergebnisse.");
   }
+}
+
+// --- PDF-Bericht erstellen ---
+function erstellePdfBericht() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const vorhabenLabel = document.querySelector("#vorhaben-auswahl .option-btn.active")?.textContent || "Kein Vorhaben ausgewählt";
+
+  doc.setFontSize(16);
+  doc.text("Genehmigungseinschätzung – NRW Basemap Konfliktprüfung", 14, 18);
+
+  doc.setFontSize(11);
+  doc.text(`Vorhaben: ${vorhabenLabel}`, 14, 30);
+  doc.text(`Erstellt am: ${new Date().toLocaleString("de-DE")}`, 14, 37);
+  doc.text(`Prüfradius: ${PRUEFRADIUS_METER} m`, 14, 44);
+
+  let y = 56;
+  doc.setFontSize(13);
+  doc.text("Ergebnisse:", 14, y);
+  y += 8;
+
+  doc.setFontSize(11);
+  for (const ergebnis of aktuelleErgebnisse) {
+    const ampel = ergebnis.status === "rot" ? "[KRITISCH]" : ergebnis.status === "gruen" ? "[OK]" : "[UNBEKANNT]";
+    doc.text(`${ampel} ${ergebnis.name}`, 14, y);
+    y += 6;
+    doc.setFontSize(10);
+    doc.text(ergebnis.detail, 18, y);
+    doc.setFontSize(11);
+    y += 10;
+
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+  }
+
+  doc.save("nrw-basemap-genehmigungseinschaetzung.pdf");
+}
+
+// --- Per Mail senden (Entwurf, PDF muss aktuell noch manuell angehängt werden) ---
+function sendePerMail() {
+  erstellePdfBericht(); // löst gleichzeitig den PDF-Download aus
+
+  const vorhabenLabel = document.querySelector("#vorhaben-auswahl .option-btn.active")?.textContent || "Vorhaben";
+  const zeilen = aktuelleErgebnisse.map((e) => {
+    const ampel = e.status === "rot" ? "KRITISCH" : e.status === "gruen" ? "OK" : "UNBEKANNT";
+    return `- ${e.name}: ${ampel} (${e.detail})`;
+  });
+
+  const betreff = encodeURIComponent(`Genehmigungseinschätzung: ${vorhabenLabel}`);
+  const body = encodeURIComponent(
+    `Genehmigungseinschätzung für: ${vorhabenLabel}\n\n${zeilen.join("\n")}\n\nBitte das soeben heruntergeladene PDF an diese E-Mail anhängen.`
+  );
+
+  window.location.href = `mailto:?subject=${betreff}&body=${body}`;
 }
 
 initMapInteraction();

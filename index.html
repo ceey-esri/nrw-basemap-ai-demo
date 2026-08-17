@@ -4,22 +4,34 @@
   <meta charset="utf-8" />
   <title>NRW Basemap – Konfliktprüfung</title>
   <script type="module" src="https://js.arcgis.com/5.1/"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <div id="app">
-    <aside id="side-panel">
-      <div id="vorhaben-panel">
-        <label for="vorhaben-typ">Was möchten Sie prüfen?</label>
-        <select id="vorhaben-typ">
-          <option value="versorgungsanlage">Neue Versorgungsanlage (Pumpe)</option>
-          <option value="verkehrsflaeche">Neue Verkehrsfläche</option>
-          <option value="siedlungsflaeche">Neue Siedlungsfläche</option>
-        </select>
+    <!-- LINKS: Prüfungsparameter -->
+    <aside id="left-panel">
+      <div class="panel-section">
+        <p class="panel-label">Was möchten Sie prüfen?</p>
+        <div id="vorhaben-auswahl" class="option-group">
+          <button type="button" class="option-btn" data-vorhaben="versorgungsanlage">Neue Versorgungsanlage (Pumpe)</button>
+          <button type="button" class="option-btn" data-vorhaben="verkehrsflaeche">Neue Verkehrsfläche</button>
+          <button type="button" class="option-btn" data-vorhaben="siedlungsflaeche">Neue Siedlungsfläche</button>
+        </div>
       </div>
 
-      <div id="criteria-panel">
+      <div class="panel-section">
+        <p class="panel-label">Eingabegeometrie</p>
+        <div id="geometrie-auswahl" class="option-group option-group-row">
+          <button type="button" class="option-btn" data-geometrie="point">Punkt</button>
+          <button type="button" class="option-btn" data-geometrie="polyline">Linie</button>
+          <button type="button" class="option-btn" data-geometrie="polygon">Fläche</button>
+        </div>
+        <p class="hint" id="geometrie-hint">Erst Typ wählen, dann auf der Karte zeichnen.</p>
+      </div>
+
+      <div class="panel-section">
         <p class="panel-label">Zu prüfende Aspekte</p>
         <label><input type="checkbox" data-layer="Naturdenkmäler" /> Naturdenkmäler</label>
         <label><input type="checkbox" data-layer="Punktförmige historische Bauwerke und Einrichtungen" /> Historische Bauwerke</label>
@@ -27,20 +39,29 @@
         <label><input type="checkbox" data-layer="Flächenhafte Verwaltungsgebiete" /> Schutzgebiete/Verwaltung</label>
         <label><input type="checkbox" data-layer="Versorgungsleitungen und Transportanlagen" /> Versorgungsleitungen</label>
         <label><input type="checkbox" data-layer="Verkehrsflächen" /> Verkehrsflächen</label>
-
-        <button id="run-check-btn">Prüfung starten</button>
-        <p class="hint">Erst Punkt auf der Karte setzen, dann prüfen.</p>
       </div>
 
-      <div id="results-panel">
-        <p class="panel-label">Einschätzung</p>
-        <div id="results-list">
-          <p class="hint">Noch keine Prüfung durchgeführt.</p>
-        </div>
+      <div class="panel-section">
+        <button id="run-check-btn" disabled>Prüfung starten</button>
       </div>
     </aside>
 
+    <!-- MITTE: Karte -->
     <div id="map-container"></div>
+
+    <!-- RECHTS: Ergebnis -->
+    <aside id="right-panel">
+      <p class="panel-label">Einschätzung</p>
+      <div id="results-list">
+        <p class="hint">Vorhaben wählen, Geometrie zeichnen, dann prüfen.</p>
+      </div>
+
+      <div id="export-buttons" class="panel-section" hidden>
+        <button id="pdf-btn">Bericht als PDF erstellen</button>
+        <button id="mail-btn">Per E-Mail senden</button>
+        <p class="hint">Die E-Mail-Funktion öffnet einen Entwurf in deinem Mailprogramm; das PDF muss aktuell noch manuell angehängt werden.</p>
+      </div>
+    </aside>
   </div>
 
   <script type="module">
@@ -62,6 +83,13 @@
     const mapEl = document.createElement("arcgis-map");
     mapEl.setAttribute("item-id", "e9cb820a2b1046d18f6cc9c37dce3768");
     mapEl.setAttribute("zoom", "10");
+    mapEl.setAttribute("id", "main-map");
+
+    // Layer-Liste zum Ein-/Ausblenden von Layern, oben rechts auf der Karte
+    const layerListEl = document.createElement("arcgis-layer-list");
+    layerListEl.setAttribute("slot", "top-right");
+    mapEl.appendChild(layerListEl);
+
     document.getElementById("map-container").appendChild(mapEl);
 
     // für app.js zugänglich machen, da beide Skripte type="module" sind (eigener Scope)
