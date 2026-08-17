@@ -11,26 +11,25 @@
   <div id="map-container"></div>
 
   <script type="module">
-    const [esriConfig, OAuthInfo, esriId] = await $arcgis.import([
-      "esri/config",
-      "esri/identity/OAuthInfo",
-      "esri/identity/IdentityManager",
-    ]);
+    const [esriConfig] = await $arcgis.import(["esri/config"]);
 
     // Eure AGOL-Organisations-URL eintragen, z.B. "https://esri-de.maps.arcgis.com"
-    esriConfig.portalUrl = "https://esridech.maps.arcgis.com";
+    esriConfig.portalUrl = "https://esri-de.maps.arcgis.com";
 
-    // Client ID aus der eben erstellten OAuth-App-Registrierung eintragen
-    const oauthInfo = new OAuthInfo({
-      appId: "QC06QMcg1G0I5yRJ",
-      portalUrl: esriConfig.portalUrl,
-      popup: true,
-    });
-    esriId.registerOAuthInfos([oauthInfo]);
+    // OAuth vorübergehend deaktiviert, um den CORS-Fehler einzugrenzen
+    // const [OAuthInfo, esriId] = await $arcgis.import([
+    //   "esri/identity/OAuthInfo",
+    //   "esri/identity/IdentityManager",
+    // ]);
+    // const oauthInfo = new OAuthInfo({
+    //   appId: "QC06QMcg1G0I5yRJ",
+    //   portalUrl: esriConfig.portalUrl,
+    //   popup: true,
+    // });
+    // esriId.registerOAuthInfos([oauthInfo]);
 
-    // Erst NACHDEM alles registriert ist, die Karte erzeugen
     const mapEl = document.createElement("arcgis-map");
-    mapEl.setAttribute("item-id", "a03834e50de2438c89b93ca0f10f531f");
+    mapEl.setAttribute("item-id", "9f3132b3a287450683684572039041ad");
     mapEl.setAttribute("zoom", "10");
     document.getElementById("map-container").appendChild(mapEl);
   </script>
