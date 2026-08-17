@@ -2,10 +2,113 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 }
 
-arcgis-map {
-  width: 100%;
+#app {
+  display: flex;
   height: 100vh;
+}
+
+#side-panel {
+  width: 300px;
+  flex-shrink: 0;
+  background: #f7f6f2;
+  border-right: 1px solid #d9d9d3;
+  padding: 16px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+#map-container,
+arcgis-map {
+  flex: 1;
+  height: 100%;
+}
+
+.panel-label {
+  font-size: 13px;
+  color: #5f5e5a;
+  margin: 16px 0 8px;
+}
+
+#vorhaben-panel label {
+  font-size: 13px;
+  color: #5f5e5a;
   display: block;
+  margin-bottom: 6px;
+}
+
+#vorhaben-panel select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #b4b2a9;
+  font-size: 14px;
+}
+
+#criteria-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 6px 0;
+  color: #2c2c2a;
+}
+
+#run-check-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #378ADD;
+  background: #e6f1fb;
+  color: #0c447c;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+#run-check-btn:hover {
+  background: #d5e8f9;
+}
+
+.hint {
+  font-size: 12px;
+  color: #8a8a84;
+  margin-top: 8px;
+}
+
+.result-card {
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #d9d9d3;
+  background: #ffffff;
+}
+
+.result-card.status-red { border-color: #A32D2D; }
+.result-card.status-yellow { border-color: #854F0B; }
+.result-card.status-green { border-color: #3b6d11; }
+
+.result-card .status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.status-red .status-dot { background: #E24B4A; }
+.status-yellow .status-dot { background: #EF9F27; }
+.status-green .status-dot { background: #639922; }
+
+.result-card .layer-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.result-card .detail {
+  font-size: 12px;
+  color: #5f5e5a;
+  margin-top: 4px;
 }
