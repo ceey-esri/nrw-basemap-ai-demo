@@ -1,73 +1,160 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="utf-8" />
-  <title>NRW Basemap – Konfliktprüfung</title>
-  <script type="module" src="https://js.arcgis.com/5.1/"></script>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
+// Vorauswahl der Kriterien je Vorhaben-Typ (einfache, feste Zuordnung –
+// später kann das stattdessen vom AI Assistant vorgeschlagen werden)
+const defaultCriteriaByType = {
+  versorgungsanlage: ["Gewässerflächen", "Versorgungsleitungen und Transportanlagen", "Naturdenkmäler"],
+  verkehrsflaeche: ["Punktförmige historische Bauwerke und Einrichtungen", "Flächenhafte Verwaltungsgebiete"],
+  siedlungsflaeche: ["Naturdenkmäler", "Gewässerflächen", "Punktförmige historische Bauwerke und Einrichtungen"],
+};
 
-  <div id="app">
-    <aside id="side-panel">
-      <div id="vorhaben-panel">
-        <label for="vorhaben-typ">Was möchten Sie prüfen?</label>
-        <select id="vorhaben-typ">
-          <option value="versorgungsanlage">Neue Versorgungsanlage (Pumpe)</option>
-          <option value="verkehrsflaeche">Neue Verkehrsfläche</option>
-          <option value="siedlungsflaeche">Neue Siedlungsfläche</option>
-        </select>
-      </div>
+const PRUEFRADIUS_METER = 100;
 
-      <div id="criteria-panel">
-        <p class="panel-label">Zu prüfende Aspekte</p>
-        <label><input type="checkbox" data-layer="Naturdenkmäler" /> Naturdenkmäler</label>
-        <label><input type="checkbox" data-layer="Punktförmige historische Bauwerke und Einrichtungen" /> Historische Bauwerke</label>
-        <label><input type="checkbox" data-layer="Gewässerflächen" /> Gewässer</label>
-        <label><input type="checkbox" data-layer="Flächenhafte Verwaltungsgebiete" /> Schutzgebiete/Verwaltung</label>
-        <label><input type="checkbox" data-layer="Versorgungsleitungen und Transportanlagen" /> Versorgungsleitungen</label>
-        <label><input type="checkbox" data-layer="Verkehrsflächen" /> Verkehrsflächen</label>
+let letzterKlickpunkt = null;
+let markerLayer = null;
 
-        <button id="run-check-btn">Prüfung starten</button>
-        <p class="hint">Erst Punkt auf der Karte setzen, dann prüfen.</p>
-      </div>
+// Vorhaben-Typ ändert die Kriterien-Vorauswahl
+function updateCriteriaFromVorhaben() {
+  const typ = document.getElementById("vorhaben-typ").value;
+  const preset = defaultCriteriaByType[typ] || [];
+  document.querySelectorAll("#criteria-panel input[type=checkbox]").forEach((checkbox) => {
+    checkbox.checked = preset.includes(checkbox.dataset.layer);
+  });
+}
 
-      <div id="results-panel">
-        <p class="panel-label">Einschätzung</p>
-        <div id="results-list">
-          <p class="hint">Noch keine Prüfung durchgeführt.</p>
-        </div>
-      </div>
-    </aside>
+document.getElementById("vorhaben-typ").addEventListener("change", updateCriteriaFromVorhaben);
+updateCriteriaFromVorhaben(); // beim Laden einmal ausführen
 
-    <div id="map-container"></div>
-  </div>
+// Karte initialisieren, sobald sie bereit ist
+async function initMapInteraction() {
+  // Kurz warten, falls das Karten-Setup-Skript in index.html noch nicht fertig ist
+  let versuche = 0;
+  while (!window.__mapEl && versuche < 20) {
+    await new Promise((r) => setTimeout(r, 100));
+    versuche++;
+  }
 
-  <script type="module">
-    const [esriConfig, OAuthInfo, esriId] = await $arcgis.import([
-      "esri/config",
-      "esri/identity/OAuthInfo",
-      "esri/identity/IdentityManager",
-    ]);
+  const mapEl = window.__mapEl;
+  if (!mapEl) {
+    console.error("Karte wurde nicht gefunden (window.__mapEl ist leer). Bitte Seite neu laden.");
+    return;
+  }
 
-    esriConfig.portalUrl = "https://sandbox-esridech.maps.arcgis.com";
+  await mapEl.viewOnReady();
+  console.log("Karte ist bereit – Klicks sollten jetzt funktionieren.");
 
-    const oauthInfo = new OAuthInfo({
-      appId: "lfWzQkKp1EH37Zfw",
-      portalUrl: esriConfig.portalUrl,
-      popup: true,
+  const [GraphicsLayer, Graphic] = await $arcgis.import([
+    "esri/layers/GraphicsLayer",
+    "esri/Graphic",
+  ]);
+  markerLayer = new GraphicsLayer({ title: "Prüfpunkt" });
+  mapEl.map.add(markerLayer);
+
+  mapEl.addEventListener("arcgisViewClick", async (event) => {
+    letzterKlickpunkt = event.detail.mapPoint;
+    console.log("Klick registriert:", letzterKlickpunkt);
+
+    // Vorherigen Marker entfernen, neuen setzen
+    markerLayer.removeAll();
+    const markerGraphic = new Graphic({
+      geometry: letzterKlickpunkt,
+      symbol: {
+        type: "simple-marker",
+        color: [226, 75, 74],
+        size: 12,
+        outline: { color: [255, 255, 255], width: 2 },
+      },
     });
-    esriId.registerOAuthInfos([oauthInfo]);
+    markerLayer.add(markerGraphic);
 
-    const mapEl = document.createElement("arcgis-map");
-    mapEl.setAttribute("item-id", "e9cb820a2b1046d18f6cc9c37dce3768");
-    mapEl.setAttribute("zoom", "10");
-    document.getElementById("map-container").appendChild(mapEl);
+    setResultsHint(`Punkt gesetzt (${letzterKlickpunkt.longitude.toFixed(4)}, ${letzterKlickpunkt.latitude.toFixed(4)}). Jetzt "Prüfung starten" klicken.`);
+  });
 
-    // für app.js zugänglich machen, da beide Skripte type="module" sind (eigener Scope)
-    window.__mapEl = mapEl;
-  </script>
+  document.getElementById("run-check-btn").addEventListener("click", () => {
+    if (!letzterKlickpunkt) {
+      setResultsHint("Bitte zuerst einen Punkt auf der Karte setzen.");
+      return;
+    }
+    runCheck(mapEl, letzterKlickpunkt);
+  });
+}
 
-  <script type="module" src="app.js"></script>
-</body>
-</html>
+function setResultsHint(text) {
+  document.getElementById("results-list").innerHTML = `<p class="hint">${text}</p>`;
+}
+
+async function runCheck(mapEl, punkt) {
+  setResultsHint("Prüfung läuft …");
+
+  const [geometryEngineAsync] = await $arcgis.import(["esri/geometry/geometryEngineAsync"]);
+  const buffer = await geometryEngineAsync.geodesicBuffer(punkt, PRUEFRADIUS_METER, "meters");
+
+  const aktiveLayerNamen = [...document.querySelectorAll("#criteria-panel input[type=checkbox]:checked")]
+    .map((el) => el.dataset.layer);
+
+  if (aktiveLayerNamen.length === 0) {
+    setResultsHint("Bitte mindestens ein Kriterium auswählen.");
+    return;
+  }
+
+  const alleLayer = mapEl.map.allLayers;
+  const ergebnisse = [];
+
+  for (const layerName of aktiveLayerNamen) {
+    const layer = alleLayer.find((l) => l.title === layerName);
+
+    if (!layer) {
+      ergebnisse.push({ name: layerName, status: "unbekannt", detail: "Layer nicht in der Webmap gefunden." });
+      continue;
+    }
+
+    try {
+      if (!layer.queryFeatures) {
+        // z.B. Gruppen-Layer oder Basemap-Layer ohne Query-Fähigkeit
+        continue;
+      }
+      const query = layer.createQuery();
+      query.geometry = buffer;
+      query.spatialRelationship = "intersects";
+      query.outFields = ["*"];
+      query.returnGeometry = false;
+
+      const result = await layer.queryFeatures(query);
+      const anzahl = result.features.length;
+
+      ergebnisse.push({
+        name: layerName,
+        status: anzahl > 0 ? "rot" : "gruen",
+        detail: anzahl > 0
+          ? `${anzahl} Objekt(e) im Prüfradius von ${PRUEFRADIUS_METER} m gefunden.`
+          : `Kein Objekt im Prüfradius von ${PRUEFRADIUS_METER} m.`,
+      });
+    } catch (err) {
+      console.error(`Fehler beim Abfragen von "${layerName}":`, err);
+      ergebnisse.push({ name: layerName, status: "unbekannt", detail: "Abfrage fehlgeschlagen (siehe Konsole)." });
+    }
+  }
+
+  renderResults(ergebnisse);
+}
+
+function renderResults(ergebnisse) {
+  const container = document.getElementById("results-list");
+  container.innerHTML = "";
+
+  const statusClass = { rot: "status-red", gelb: "status-yellow", gruen: "status-green", unbekannt: "status-yellow" };
+
+  for (const ergebnis of ergebnisse) {
+    const card = document.createElement("div");
+    card.className = `result-card ${statusClass[ergebnis.status] || "status-yellow"}`;
+    card.innerHTML = `
+      <div><span class="status-dot"></span><span class="layer-name">${ergebnis.name}</span></div>
+      <div class="detail">${ergebnis.detail}</div>
+    `;
+    container.appendChild(card);
+  }
+
+  if (ergebnisse.length === 0) {
+    setResultsHint("Keine Ergebnisse.");
+  }
+}
+
+initMapInteraction();
