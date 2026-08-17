@@ -97,10 +97,13 @@ async function initMapInteraction() {
     },
   });
 
-  sketchViewModel.on("create-complete", (event) => {
-    letzteEingabegeometrie = event.graphic.geometry;
-    document.getElementById("run-check-btn").disabled = false;
-    document.getElementById("geometrie-hint").textContent = "Geometrie gesetzt. Kriterien wählen und Prüfung starten.";
+  sketchViewModel.on("create", (event) => {
+    console.log("Sketch create event, state:", event.state);
+    if (event.state === "complete") {
+      letzteEingabegeometrie = event.graphic.geometry;
+      document.getElementById("run-check-btn").disabled = false;
+      document.getElementById("geometrie-hint").textContent = "Geometrie gesetzt. Kriterien wählen und Prüfung starten.";
+    }
   });
 
   document.getElementById("run-check-btn").addEventListener("click", () => {
