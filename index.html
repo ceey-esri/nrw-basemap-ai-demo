@@ -2,100 +2,110 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <title>NRW Basemap – Konfliktprüfung</title>
-  <script type="module" src="https://js.arcgis.com/5.1/"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Genehmigungs-Screening</title>
+
+  <!--
+    ArcGIS wird ueber npm-Pakete geladen (siehe app.js / src/), nicht per CDN.
+    Voraussetzung dafuer, dass eigene Agents (LLMAgent) gebaut werden koennen.
+  -->
+  <link rel="stylesheet" href="/style.css" />
 </head>
+
 <body>
-
   <div id="app">
-    <!-- LINKS: Prüfungsparameter -->
-    <aside id="left-panel">
-      <div class="panel-section">
-        <p class="panel-label">Was möchten Sie prüfen?</p>
-        <div id="vorhaben-auswahl" class="option-group">
-          <button type="button" class="option-btn" data-vorhaben="versorgungsanlage">Neue Versorgungsanlage (Pumpe)</button>
-          <button type="button" class="option-btn" data-vorhaben="verkehrsflaeche">Neue Verkehrsfläche</button>
-          <button type="button" class="option-btn" data-vorhaben="siedlungsflaeche">Neue Siedlungsfläche</button>
+
+    <header id="topbar">
+      <div class="titel">
+        <strong>Genehmigungs-Screening</strong>
+        <span class="untertitel">Bauantrag &amp; Bauleitplanung &middot; ArcGIS</span>
+      </div>
+      <div class="auth">
+        <span id="login-status" class="login-status">Nicht angemeldet</span>
+        <button id="login-btn" type="button">Anmelden</button>
+      </div>
+    </header>
+
+    <div id="main">
+
+      <!-- Steuerung -->
+      <aside id="left-panel">
+        <div class="panel-section">
+          <p class="panel-label">1 &middot; Vorhabentyp</p>
+          <select id="vorhaben-typ" class="option-select">
+            <option value="">- bitte waehlen -</option>
+            <option value="Windenergieanlage">Windenergieanlage</option>
+            <option value="Wohngebaeude (Neubau)">Wohngebaeude (Neubau)</option>
+            <option value="Gewerbe-/Industriebau">Gewerbe-/Industriebau</option>
+            <option value="Landwirtschaftliches Gebaeude">Landwirtschaftliches Gebaeude</option>
+            <option value="Strasse / Verkehrsweg">Strasse / Verkehrsweg</option>
+            <option value="Leitung / Trasse">Leitung / Trasse</option>
+            <option value="Abgrabung / Aufschuettung">Abgrabung / Aufschuettung</option>
+            <option value="Freiflaechen-Photovoltaik">Freiflaechen-Photovoltaik</option>
+            <option value="Bauleitplanung (Bebauungsplan)">Bauleitplanung (Bebauungsplan)</option>
+            <option value="Sonstiges">Sonstiges</option>
+          </select>
         </div>
-      </div>
 
-      <div class="panel-section">
-        <p class="panel-label">Eingabegeometrie</p>
-        <div id="geometrie-auswahl" class="option-group option-group-row">
-          <button type="button" class="option-btn" data-geometrie="point">Punkt</button>
-          <button type="button" class="option-btn" data-geometrie="polyline">Linie</button>
-          <button type="button" class="option-btn" data-geometrie="polygon">Fläche</button>
+        <div class="panel-section">
+          <p class="panel-label">2 &middot; Vorhabenumring</p>
+          <p class="hint">
+            Mit dem Zeichenwerkzeug oben links in der Karte den Vorhabenumring
+            bzw. Geltungsbereich zeichnen - als Polygon, Freihand-Polygon oder
+            Rechteck.
+          </p>
+          <button id="umring-loeschen-btn" type="button" class="option-btn">
+            Umring loeschen
+          </button>
+          <p id="umring-status" class="hint">Kein Umring gezeichnet.</p>
         </div>
-        <p class="hint" id="geometrie-hint">Erst Typ wählen, dann auf der Karte zeichnen.</p>
-      </div>
 
-      <div class="panel-section">
-        <p class="panel-label">Zu prüfende Aspekte</p>
-        <label><input type="checkbox" data-layer="Naturdenkmäler" /> Naturdenkmäler</label>
-        <label><input type="checkbox" data-layer="Punktförmige historische Bauwerke und Einrichtungen" /> Historische Bauwerke</label>
-        <label><input type="checkbox" data-layer="Gewässerflächen" /> Gewässer</label>
-        <label><input type="checkbox" data-layer="Flächenhafte Verwaltungsgebiete" /> Schutzgebiete/Verwaltung</label>
-        <label><input type="checkbox" data-layer="Versorgungsleitungen und Transportanlagen" /> Versorgungsleitungen</label>
-        <label><input type="checkbox" data-layer="Verkehrsflächen" /> Verkehrsflächen</label>
-      </div>
+        <div class="panel-section">
+          <p class="panel-label">3 &middot; Pruefbereiche</p>
+          <p class="hint">
+            Vorauswahl. Die Triage im Assistenten passt die Haken an das konkrete
+            Vorhaben an.
+          </p>
+          <div id="pruefbereich-liste" class="option-group"></div>
+        </div>
 
-      <div class="panel-section">
-        <button id="run-check-btn" disabled>Prüfung starten</button>
-      </div>
-    </aside>
+        <div class="panel-section">
+          <p class="panel-label">4 &middot; Pruefauftrag</p>
+          <p class="hint">
+            Rechts im Assistenten: erst &bdquo;Welche Rechtsgebiete sind relevant?&ldquo;,
+            dann &bdquo;Screening starten&ldquo;.
+          </p>
+        </div>
+      </aside>
 
-    <!-- MITTE: Karte -->
-    <div id="map-container"></div>
+      <!-- Karte -->
+      <main id="map-container"></main>
 
-    <!-- RECHTS: Ergebnis -->
-    <aside id="right-panel">
-      <p class="panel-label">Einschätzung</p>
-      <div id="results-list">
-        <p class="hint">Vorhaben wählen, Geometrie zeichnen, dann prüfen.</p>
-      </div>
+      <!-- Assistent + Ergebnis -->
+      <aside id="right-panel">
+        <section id="assistant-slot"></section>
 
-      <div id="export-buttons" class="panel-section" hidden>
-        <button id="pdf-btn">Bericht als PDF erstellen</button>
-        <button id="mail-btn">Per E-Mail senden</button>
-        <p class="hint">Die E-Mail-Funktion öffnet einen Entwurf in deinem Mailprogramm; das PDF muss aktuell noch manuell angehängt werden.</p>
-      </div>
-    </aside>
+        <section class="panel-section">
+          <p class="panel-label">Befunde</p>
+          <div id="results"></div>
+          <button id="pdf-btn" type="button" class="option-btn" disabled>
+            PDF-Uebersicht erzeugen
+          </button>
+        </section>
+
+        <section class="panel-section">
+          <p class="panel-label">Scoping-Vermerk (Entwurf)</p>
+          <textarea id="vermerk" rows="12" readonly
+            placeholder="Wird nach dem Screening befuellt."></textarea>
+          <button id="vermerk-copy-btn" type="button" class="option-btn">
+            In Zwischenablage kopieren
+          </button>
+        </section>
+      </aside>
+
+    </div>
   </div>
 
-  <script type="module">
-    const [esriConfig, OAuthInfo, esriId] = await $arcgis.import([
-      "esri/config",
-      "esri/identity/OAuthInfo",
-      "esri/identity/IdentityManager",
-    ]);
-
-    esriConfig.portalUrl = "https://sandbox-esridech.maps.arcgis.com";
-
-    const oauthInfo = new OAuthInfo({
-      appId: "lfWzQkKp1EH37Zfw",
-      portalUrl: esriConfig.portalUrl,
-      popup: true,
-    });
-    esriId.registerOAuthInfos([oauthInfo]);
-
-    const mapEl = document.createElement("arcgis-map");
-    mapEl.setAttribute("item-id", "e9cb820a2b1046d18f6cc9c37dce3768");
-    mapEl.setAttribute("zoom", "10");
-    mapEl.setAttribute("id", "main-map");
-
-    // Layer-Liste zum Ein-/Ausblenden von Layern, oben rechts auf der Karte
-    const layerListEl = document.createElement("arcgis-layer-list");
-    layerListEl.setAttribute("slot", "top-right");
-    mapEl.appendChild(layerListEl);
-
-    document.getElementById("map-container").appendChild(mapEl);
-
-    // für app.js zugänglich machen, da beide Skripte type="module" sind (eigener Scope)
-    window.__mapEl = mapEl;
-  </script>
-
-  <script type="module" src="app.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

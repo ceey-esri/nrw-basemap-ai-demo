@@ -2,17 +2,71 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #2c2c2a;
 }
 
 #app {
   display: flex;
+  flex-direction: column;
   height: 100vh;
+}
+
+/* --- Topbar --- */
+#topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #0c447c;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+#topbar .titel strong {
+  font-size: 15px;
+}
+
+#topbar .untertitel {
+  margin-left: 10px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+#topbar .auth {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.login-status {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+#login-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#login-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* --- Layout --- */
+#main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
 }
 
 #left-panel,
 #right-panel {
-  width: 300px;
   flex-shrink: 0;
   background: #f7f6f2;
   padding: 16px;
@@ -21,19 +75,39 @@ html, body {
 }
 
 #left-panel {
+  width: 280px;
   border-right: 1px solid #d9d9d3;
 }
 
 #right-panel {
+  width: 380px;
   border-left: 1px solid #d9d9d3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 #map-container,
 arcgis-map {
   flex: 1;
   height: 100%;
+  min-width: 0;
 }
 
+#assistant-slot {
+  height: 420px;
+  border: 1px solid #d9d9d3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+#assistant-slot arcgis-assistant {
+  height: 100%;
+  width: 100%;
+}
+
+/* --- Panel-Bausteine --- */
 .panel-section {
   margin-bottom: 20px;
 }
@@ -51,85 +125,77 @@ arcgis-map {
   gap: 6px;
 }
 
-.option-group-row {
-  flex-direction: row;
+.option-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 4px 0;
 }
 
 .option-btn {
-  flex: 1;
-  padding: 10px;
+  padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid #b4b2a9;
-  background: #ffffff;
+  background: #fff;
   color: #2c2c2a;
   font-size: 13px;
   cursor: pointer;
   text-align: center;
 }
 
-.option-btn:hover {
-  background: #f0efe9;
-}
-
-.option-btn.active {
-  border-color: #378ADD;
-  background: #e6f1fb;
-  color: #0c447c;
-  font-weight: 600;
-}
-
-#criteria-panel-section label,
-.panel-section label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  padding: 6px 0;
-  color: #2c2c2a;
-}
-
-button#run-check-btn,
-button#pdf-btn,
-button#mail-btn {
+.option-select {
   width: 100%;
-  padding: 10px;
+  box-sizing: border-box;
+  padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid #378ADD;
-  background: #e6f1fb;
-  color: #0c447c;
-  font-size: 14px;
-  cursor: pointer;
-  margin-bottom: 8px;
+  border: 1px solid #b4b2a9;
+  background: #fff;
+  color: #2c2c2a;
+  font-size: 13px;
 }
 
-button#run-check-btn:hover,
-button#pdf-btn:hover,
-button#mail-btn:hover {
-  background: #d5e8f9;
-}
-
-button#run-check-btn:disabled {
+button.option-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.option-btn:hover {
+  background: #f0efe9;
 }
 
 .hint {
   font-size: 12px;
   color: #8a8a84;
-  margin-top: 8px;
+  margin: 8px 0 0;
 }
 
+textarea#vermerk {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 11px;
+  border: 1px solid #d9d9d3;
+  border-radius: 8px;
+  padding: 8px;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+/* --- Ergebnis-Karten (Ampel) --- */
 .result-card {
   border-radius: 8px;
   padding: 10px;
   margin-bottom: 10px;
   border: 1px solid #d9d9d3;
-  background: #ffffff;
+  border-left-width: 4px;
+  background: #fff;
 }
 
-.result-card.status-red { border-color: #A32D2D; }
-.result-card.status-yellow { border-color: #854F0B; }
-.result-card.status-green { border-color: #3b6d11; }
+.result-card.status-red { border-left-color: #A32D2D; }
+.result-card.status-yellow { border-left-color: #854F0B; }
+.result-card.status-green { border-left-color: #3b6d11; }
+.result-card.status-grey { border-left-color: #8a8a84; }
 
 .result-card .status-dot {
   display: inline-block;
@@ -137,6 +203,7 @@ button#run-check-btn:disabled {
   height: 8px;
   border-radius: 50%;
   margin-right: 6px;
+  background: #8a8a84;
 }
 
 .status-red .status-dot { background: #E24B4A; }
@@ -152,4 +219,23 @@ button#run-check-btn:disabled {
   font-size: 12px;
   color: #5f5e5a;
   margin-top: 4px;
+}
+
+.result-card .detail.hinweis {
+  color: #854F0B;
+}
+
+.result-card.klickbar {
+  cursor: pointer;
+}
+
+.result-card.klickbar:hover {
+  background: #f0f6fd;
+  border-color: #378ADD;
+}
+
+.result-card .detail.zoomhint {
+  color: #378ADD;
+  font-size: 11px;
+  margin-top: 6px;
 }

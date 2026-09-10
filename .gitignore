@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.vite/
+*.log
+__pycache__/
+.DS_Store
+rag/chroma_db/
+rag/.venv/
+
+# Quellmaterial fuer den RAG-Index: 481 MB Regionalplaene und 12 MB Gesetze.
+# Gehoert nicht in die Historie - GitHub lehnt einzelne Dateien ab 100 MB ab,
+# und Binaerballast laesst sich spaeter nicht mehr sauber entfernen. Die PDFs
+# werden lokal abgelegt und mit `npm run rag:ingest` / `rag:ingest:rp`
+# indiziert; ohne sie laeuft die Recherche nicht (siehe CLAUDE.md).
+Regionalplaene/
+Rechtsgrundlagen/
+
+# Maschinenlokale Claude-Code-Einstellungen (Berechtigungen dieses Rechners).
+.claude/settings.local.json

@@ -1,0 +1,35 @@
+{
+  "name": "genehmigungs-screening",
+  "version": "1.0.0",
+  "description": "KI-gestuetztes fachuebergreifendes Genehmigungs-Screening fuer Bauantrag und Bauleitplanung auf der ArcGIS-Plattform.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint app.js src/",
+    "preview": "vite preview",
+    "rag": "cd rag && .venv/Scripts/python.exe -m uvicorn server:app --port 8000",
+    "rag:ingest": "cd rag && .venv/Scripts/python.exe ingest.py",
+    "rag:ingest:rp": "cd rag && .venv/Scripts/python.exe ingest_rp.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ceey-esri/nrw-basemap-ai-demo.git"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "@arcgis/ai-components": "^5.1.20",
+    "@arcgis/core": "^5.1.20",
+    "@arcgis/map-components": "^5.1.20",
+    "@esri/arcgis-rest-feature-service": "^4.11.0",
+    "@esri/calcite-components": "^5.1.2",
+    "@turf/turf": "^7.4.0",
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.1"
+  }
+}
