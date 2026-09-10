@@ -1,234 +1,269 @@
-// Screening-Agenten (Hybrid-Architektur).
+// Screening-Agent, registriert an die (unsichtbare) <arcgis-assistant>.
 //
-// Custom Agents = LLMAgent / WorkflowAgent (Entscheidung aus CLAUDE.md): laufen
-// ueber Esris gehostete Modelle, verbrauchen ArcGIS-Credits, kein eigenes
-// Modell-Backend.
-//
-// Registriert an die <arcgis-assistant>:
-//   1. TRIAGE-Agent - ermittelt und begruendet, welche Rechtsgebiete fuer das
-//      konkrete Vorhaben relevant sind, und setzt die Pruefbereich-Haken.
-//   2. KOORDINATOR ("GesamtScreeningAgent") - prueft die (angehakten)
-//      Rechtsgebiete in einem Durchlauf, schreibt Vermerk + Field-Maps-Tasks.
-//      Technisch WorkflowAgent (SequentialWorkflow ueber die Fach-Agenten +
-//      Synthese-Agent); Fallback: einzelner kombinierter LLMAgent.
-//   3. Je Rechtsgebiet ein FACH-Agent - fuer gezielte Einzel-/Nachfragen.
+// Er steuert den Ablauf und die Geo-Analyse. Die Rechercheanteile laufen in
+// zwei Subagenten (subagenten.js), die er über Werkzeuge anspricht - so
+// bleiben die RAG-Passagen aus seinem Kontext heraus.
 
 import "@arcgis/ai-components/components/arcgis-assistant";
 import "@arcgis/ai-components/components/arcgis-assistant-agent";
-import {
-  createLLMAgent,
-  createWorkflowAgent,
-  createSequentialWorkflow,
-} from "@arcgis/ai-components/agent-utils/index.js";
+import { createLLMAgent } from "@arcgis/ai-components/agent-utils/index.js";
 
 import { MODEL_TIER } from "../config.js";
-import { PRUEFBEREICHE } from "./pruefbereiche.js";
-import { baueTools, baueSyntheseTools } from "./tools.js";
+import { baueTools } from "./tools.js";
+import { baueRechercheTools } from "./subagenten.js";
+import { kategorienListe } from "./kategorien.js";
+import { meldeSchritt } from "./fortschritt.js";
 
-const HAFTUNG =
-  'Das ist ein Screening-/Scoping-Beschleuniger, kein Fachgutachten. Keine ' +
-  'rechtssicheren Artbestimmungen. Rechtsgrundlagen mit Praefix "PLATZHALTER" ' +
-  "sind noch nicht belegt - sage das dazu. Antworte auf Deutsch.";
+const KATEGORIEN_LISTE = kategorienListe();
 
-const BEREICHS_LISTE = PRUEFBEREICHE.map(
-  (p) => `- ${p.id}: ${p.titel} - ${p.beschreibung}`,
-).join("\n");
+let aktuellerAgent = "Screening";
 
-// --- Triage -----------------------------------------------------------------
-const TRIAGE_PROMPT = `
-Du bist der Triage-Schritt eines fachuebergreifenden Genehmigungs-Screenings
-(Bauantrag / Bauleitplanung). Ziel: NICHT stur alle Verfahren pruefen, sondern
-nur die, die fuer DIESES Vorhaben Sinn ergeben.
+/** Erster Satz eines Modelltextes, hart auf `max` Zeichen gekappt. */
+function ersterSatz(text, max) {
+  const satz = String(text).split(/(?<=[.!?])\s/)[0] ?? text;
+  return satz.length > max ? satz.slice(0, max - 1).trimEnd() + "…" : satz;
+}
 
-Rechtsgebiete:
-${BEREICHS_LISTE}
+function argsKompakt(args) {
+  if (!args || typeof args !== "object") return "";
+  return Object.entries(args)
+    .map(([k, v]) => `${k}=${String(v).replace(/\s+/g, " ").slice(0, 45)}`)
+    .join(", ")
+    .slice(0, 160);
+}
 
-Vorgehen:
-1. holeVorhabenKontext aufrufen (Vorhabentyp, Umring, Flaeche).
-2. Anhand von Vorhabentyp und Nutzerbeschreibung entscheiden, welche
-   Rechtsgebiete relevant sind. Kurze Begruendung je Gebiet - auch fuer die
-   NICHT relevanten ("entfaellt, weil ...").
-3. setzePruefbereiche mit den relevanten Ids aufrufen.
-4. Dem Nutzer die Auswahl + Begruendung zeigen und fragen:
-   "Passt das? Dann 'Screening starten' - oder nennen Sie Anpassungen."
+// Meldet die Werkzeugkette an die Fortschrittsanzeige - das ist im neuen
+// Zuschnitt das Hauptargument der Demo, nicht bloss ein Nebenprodukt.
+// Ausserdem: Rekursionslimit hoch, der Lauf braucht viele Tool-Runden.
+const fortschrittMiddleware = {
+  name: "fortschritt-agent",
+  handler: (req, next) => {
+    if (req.config && (req.config.recursionLimit ?? 0) < 120) {
+      req.config.recursionLimit = 120;
+    }
+    return next(req);
+  },
+  hooks: {
+    beforeAgent: (req) => {
+      aktuellerAgent = req.agent?.name === "ScreeningAgent" ? "Screening" : req.agent?.name;
+      meldeSchritt({ typ: "agent", text: aktuellerAgent });
+    },
+    afterModel: (state) => {
+      try {
+        const letzte = state?.messages?.at?.(-1);
+        const calls = letzte?.tool_calls ?? letzte?.additional_kwargs?.tool_calls ?? [];
+        const gedanke =
+          typeof letzte?.content === "string" ? letzte.content.replace(/\s+/g, " ").trim() : "";
+        // Nur der erste Satz und hart gekappt: der Fliesstext des Modells
+        // sprengt sonst die Ablaufzeile, ohne mehr zu sagen.
+        if (gedanke) meldeSchritt({ typ: "ki", text: ersterSatz(gedanke, 110) });
+        for (const c of calls) {
+          const args = c.args ?? c.function?.arguments ?? {};
+          const a = typeof args === "string" ? args.slice(0, 180) : argsKompakt(args);
+          meldeSchritt({
+            typ: "ki",
+            text: `${aktuellerAgent} -> ${c.name ?? c.function?.name}(${a})`,
+          });
+        }
+      } catch {
+        /* ignore */
+      }
+    },
+  },
+};
 
-Starte NICHT selbst das eigentliche Screening.
+export const SCREENING_PROMPT = `
+Du unterstützt eine Raumordnungsbehörde beim räumlichen ERSTSCREENING eines
+raumbedeutsamen Vorhabens: welcher Raum ist betroffen, welche raumordnerischen
+Themen sind berührt, was ist vertieft zu prüfen.
 
-${HAFTUNG}
+Du arbeitest über Tool-Aufrufe. Vor jedem Aufruf EIN kurzer, neutraler Satz,
+warum er jetzt erfolgt - keine Ich-Form, keine Floskeln.
+
+Zwei Phasen. Die Nutzer-Nachricht sagt, welche dran ist. Führe nur diese aus.
+
+=== PHASE 1: RELEVANZ ===
+
+1. holeVorhabenKontext.
+
+2. bestimmeRegion - die Zuordnung kommt aus dem Verschnitt mit den
+   Verwaltungsgrenzen. Rate sie NIE aus einem Ortsnamen. Scheitert sie, sag das
+   und fahre ohne Regionalplanbezug fort.
+
+3. Wähle aus dem Katalog unten die Kategorien, die ein Vorhaben dieser Art
+   BERÜHREN kann.
+
+   ACHTUNG, die häufigste Verwechslung: Gefragt ist NICHT, zu welchem
+   Fachbereich das Vorhaben SELBST gehört, sondern welche fremden Belange es
+   beeinträchtigt. Eine Windenergieanlage IST Energieinfrastruktur - genau
+   deshalb ist "Energie" hier der uninteressanteste Belang. Interessant ist,
+   was sie berührt: Siedlung (Abstände, Immissionen), Natur (Artenschutz,
+   Eingriff), Wald (Rodung, Zuwegung), Landwirtschaft (Flächeninanspruchnahme),
+   Kulturlandschaft (Sichtbeziehungen), Verkehr (Anbauverbotszonen, Zuwegung).
+   Dasselbe bei einer Strasse: der Belang "Verkehr" ist das Vorhaben, nicht
+   seine Wirkung.
+
+   Ein raumbedeutsames Vorhaben berührt typischerweise MEHRERE Belange - bei
+   einem grossen Vorhaben mit weitem Wirkraum durchaus die meisten. Kommst du
+   auf nur eine oder zwei Kategorien, hast du fast sicher nach der Zugehörigkeit
+   des Vorhabens gefragt statt nach seiner Wirkung. Lass keine aus, die nach dem
+   Fachrecht naheliegt.
+
+4. recherchiere(kategorieId, vorhaben) - je Kategorie GENAU EINMAL. Fragt
+   Regionalplan und Fachrecht gleichzeitig ab.
+   Das Feld "vorhaben" ist die geplante MASSNAHME in Kurzform ("Neubau einer
+   Strasse", "Errichtung einer Windenergieanlage") - nicht die Kategorie.
+
+   Die Recherche klärt NUR die GRUNDSATZFRAGE: Kann ein Vorhaben DIESER ART
+   den Belang räumlich oder funktional BERÜHREN - Flächen in Anspruch nehmen,
+   überbauen, zerschneiden, überprägen oder im Wirkraum beeinträchtigen? Ob im
+   Umfeld tatsächlich etwas liegt, klärt Phase 2 mit der räumlichen Analyse.
+   Verwirf eine Kategorie deshalb NIE mit Begründungen wie "ohne Kenntnis der
+   konkreten Lage nicht anzunehmen" oder "nur relevant, wenn das Vorhaben in
+   einem solchen Bereich liegt" - genau das wird ja noch geprüft.
+   Ebenso wenig taugt "der Kurzbefund nennt keine benennbare Anforderung":
+   Regionalpläne regeln GEBIETE und Fachgesetze SCHUTZGÜTER, beide nennen den
+   Vorhabentyp fast nie beim Namen. Fehlt ein Zitat, ist das eine Lücke der
+   Recherche, kein Beleg für Nichtbetroffenheit.
+   Ein grosses Vorhaben mit weitem Wirkraum - eine hohe Windenergieanlage etwa -
+   berührt durchaus die meisten Kategorien. Das ist kein Fehler. Die Abstufung
+   machst du über den RADIUS, nicht über das Weglassen von Kategorien.
+   Der Wortlaut erscheint automatisch im Ergebnispanel, du brauchst ihn nicht.
+
+5. meldeRelevanz - für jede Kategorie, die ein Vorhaben dieser Art berühren
+   kann. Im Zweifel MELDEN: eine zu viel geprüfte Kategorie kostet eine
+   Abfrage, eine übersehene macht das Screening unbrauchbar.
+   - begruendung: 2-4 Sätze - WIE der Vorhabentyp den Belang berührt, gestützt
+     auf die Fundstellen. Noch nicht auf die Lage, die kennst du in Phase 1
+     nicht.
+   - regionalplan / gesetz: Nummer bzw. Paragraph und Titel.
+   - radiusMeter: der Radius DIESER Kategorie, hergeleitet aus dem
+     einschlägigen Abstandserfordernis oder Wirkraum - Anbauverbotszone,
+     Gewässerrandstreifen, Umgebungsschutz und Schutzgebietswirkraum ergeben
+     sehr verschiedene Weiten. Lieber klein und begründet als gross und
+     gegriffen. 0 = nur die Vorhabenflaeche.
+   - radiusBegruendung: woraus genau diese Weite folgt. Erscheint als Tooltip,
+     muss für sich verständlich sein.
+
+6. meldeNichtRelevant - nur für Kategorien, die ein Vorhaben dieser Art seiner
+   Bauart nach gar nicht berühren kann (Wald bei einer Anlage ausschliesslich
+   im Siedlungsbereich, Gewässer bei einem Mast auf einem Bestandsgebäude).
+   Ein Satz, warum sie hier nicht einschlägig ist,
+   plus die Fundstelle bzw. "keine Festlegung". Damit ist im Ergebnis
+   nachvollziehbar, dass der Belang betrachtet wurde - statt einfach zu
+   fehlen. Kategorien, die du gar nicht erst recherchiert hast, meldest du
+   auch hier nicht.
+
+7. VOLLSTÄNDIGKEIT prüfen, bevor du antwortest: Für JEDE Kategorie, die du in
+   Schritt 4 recherchiert hast, muss GENAU EINE Meldung vorliegen - entweder
+   meldeRelevanz oder meldeNichtRelevant. Keine darf ohne Meldung bleiben.
+   Trägt keine einzige, ist das ein gültiges Ergebnis: dann meldest du eben
+   alle als nicht einschlägig. Ein Lauf ohne jede Meldung ist dagegen ein
+   Fehler.
+
+8. Kurze Übersicht: geltender Plan, relevante Kategorien mit je einem Satz und
+   Radius. KEIN queryLayer, KEIN fasseZusammen in Phase 1.
+
+=== PHASE 2: OBJEKTE ===
+
+1. beschreibeLayer ohne Argumente - welche Layer gibt es, mit ihren
+   Feld-Aliassen. Keine geratenen Layernamen.
+   Die Kategorie am Layer ist ein Vorschlag aus einem TITEL-Muster, keine
+   Wahrheit. Geh die Liste durch und pruefe auch Layer OHNE passenden Titel:
+   in diesem Datenbestand steckt Einschlaegiges oft in unscheinbar benannten
+   Layern - Schutzgebiete in "Flaechen weiterer Nutzung", Leitungen in
+   "Bauwerke und Einrichtungen". Die Feldnamen verraten das, der Titel nicht.
+
+2. ATTRIBUTE PRUEFEN - für JEDEN Layer einzeln. Ein Layertitel sagt, WO etwas
+   liegt, nicht WAS es fachlich ist: "Verkehrswege" enthält Autobahn und
+   Wirtschaftsweg, "Gewässerlinien" Fluss und Entwässerungsgraben.
+   Rufe deshalb vor JEDER Abfrage beschreibeLayer(layerTitel) für genau diesen
+   Layer auf und nimm Feldnamen und Codes von dort. Unbekannte Feldnamen weist
+   queryLayer zurück.
+
+3. queryLayer für JEDEN Layer, der zur Kategorie passt - nicht nur für den
+   erstbesten. "Wald" steckt sowohl in "Laub- und Nadelbäume" als auch in
+   "Vegetationsflächen"; wer nur einen abfragt, meldet die halbe Wahrheit.
+   Hältst du einen vorgeschlagenen Layer fachlich für nicht einschlägig, sag
+   das ausdrücklich, statt ihn zu übergehen. Die Abfrage läuft automatisch
+   gegen die Zone dieser Kategorie - du musst nichts puffern.
+   - where: grenzt auf die Ausprägungen ein, die nach Regionalplan und
+     Fachrecht raumbedeutsam sind. Ein Anbauverbot nach § 9 FStrG gilt für
+     klassifizierte Strassen, nicht für jeden Feldweg.
+   - gruppeFeld: NUR ein Feld aus "klassifizierendeFelder" von beschreibeLayer.
+     Diese Liste nennt je Feld, warum es klassifiziert (codierte Domäne oder
+     Zahl der Ausprägungen im Untersuchungsraum). Nimm daraus das Feld, dessen
+     Ausprägungen raumordnerisch etwas unterscheiden - Strassenklasse,
+     Schutzgebietstyp, Gewässerart, Vegetationstyp. NICHT Name, Nummer, Datum
+     oder Kennung: die trennen Objekte, aber keine Sachverhalte. Ist die Liste
+     leer, frage ohne gruppeFeld ab, statt eines zu erfinden.
+     Aus "42 Verkehrswege" wird so "12 km Autobahn, 3 km Landesstrasse".
+   - Sag in deinem Satz davor, welche Ausprägungen du warum betrachtest.
+   - Kommt "filterVerworfen" zurück, traf dein where nichts und es wurde ohne
+     Filter gemessen. Das Ergebnis steht - du musst NICHT wiederholen. Nutze
+     "tatsaechlicheWerte" höchstens für den nächsten Layer.
+   - 0 Objekte ist sonst ein gültiges Ergebnis. Nicht mit neuen where-Varianten
+     nachbohren.
+
+4. fasseZusammen - 3 bis 6 kurze, quantifizierte Sätze. Zahlen stammen aus
+   queryLayer, nicht aus dir. Nur was gefunden wurde.
+
+=== KATEGORIEN ===
+
+Bilden die Festlegungskapitel der Regionalpläne ab (§ 7 ROG). Nur aus dieser
+Liste wählen:
+
+${KATEGORIEN_LISTE}
+
+=== GRENZE - verbindlich ===
+
+Du stellst FEST, was im Untersuchungsraum liegt, und benennst, was vertieft zu
+prüfen ist. Du bewertest NICHT die Raumverträglichkeit, NICHT die
+Zulässigkeit und NICHT, ob ein Ziel entgegensteht. Ziele gibst du im Wortlaut
+wieder - die Beachtung prüft die Behörde.
+
+Verboten: "zulässig", "unzulässig", "verträglich", "steht entgegen",
+"spricht dagegen", "unproblematisch", jede Gesamtempfehlung.
+
+=== REGELN ===
+
+Liefert ein Werkzeug "nichtWiederholen" oder einen Fehler, rufe es NICHT erneut
+mit denselben Argumenten auf - halte dich an den Hinweis und fahre fort.
+
+Bewerte nur, was in der Karte liegt. Keine Spekulation über nicht erfasste
+Objekte. Fehlt ein Layer, sag das konkret - aber kein pauschaler Vorbehalt zur
+Datengrundlage.
+
+Antworte in der Sprache, die die Nutzer-Nachricht verlangt.
 `.trim();
 
-// --- Fach-Agent (ein Rechtsgebiet) ----------------------------------------
-function fachPrompt(b) {
-  return `
-Du bist der Fach-Agent fuer das Rechtsgebiet "${b.titel}" (id: ${b.id}) in einem
-fachuebergreifenden Genehmigungs-Screening.
-
-${b.beschreibung}
-
-Vorgehen:
-1. holeVorhabenKontext. Steht "${b.id}" NICHT in angehakktePruefbereiche,
-   antworte nur "${b.titel}: uebersprungen (nicht als relevant markiert)" und
-   rufe KEIN weiteres Tool.
-2. beschreibeLayer (ohne Argumente) - welche Layer/Felder gibt es wirklich?
-   Die Info kann als Attribut in einem allgemeineren Layer stecken.
-3. puffer mit sinnvollem Suchradius (Standard fuer dieses Gebiet: ${b.pufferMeter} m).
-4. queryLayer - bei Bedarf mit layerTitel und where (Attributfilter).
-5. Nur wenn wirklich keine Datengrundlage existiert: erfrageFehlendeDaten,
-   dann meldeBefund mit ampel="ungeprueft".
-6. holeRechtsgrundlage fuer die Fundstelle (derzeit Platzhalter).
-7. meldeBefund mit Ampel, Aussage, Verfahren, Behoerde, Rechtsgrundlage.
-   Genau EIN Befund.
-8. Kannst du einen Aspekt nicht abschliessend klaeren (nur vor Ort pruefbar,
-   Schwellenwert/Abgrenzung unklar, Datenwiderspruch): merkePruefpunkt aufrufen.
-
-Zustaendige Behoerde (Anhalt): ${b.behoerde}. Typisches Verfahren: ${b.verfahren}.
-
-${HAFTUNG}
-`.trim();
-}
-
-function fachBeschreibung(b) {
-  return (
-    `Prueft NUR das Rechtsgebiet "${b.titel}" fuer den gezeichneten Vorhabenumring. ` +
-    `Nutze diesen Agent fuer gezielte Einzelfragen oder Nachpruefungen zu diesem Thema. ` +
-    `${b.beschreibung}`
-  );
-}
-
-// --- Synthese -------------------------------------------------------------
-const SYNTHESE_PROMPT = `
-Du bist der Abschluss-Schritt des Genehmigungs-Screenings. Die Fach-Agenten
-haben ihre Befunde gemeldet.
-
-1. holeBisherigeBefunde aufrufen.
-2. schreibeVermerk mit einem kurzen, lesbaren, fachuebergreifenden
-   Scoping-Vermerk:
-   - ausgeloeste / zu pruefende Verfahren je Rechtsgebiet (Behoerde,
-     Rechtsgrundlage),
-   - davon klar getrennt die Punkte "nicht geprueft" (Datengrundlage fehlt) -
-     diese duerfen NICHT wie unauffaellige Punkte aussehen,
-   - Rechtsgebiete ohne Befund.
-3. erzeugeTasks aufrufen (schreibt die offenen Pruefpunkte nach ArcGIS Field
-   Maps). Wenn 0 Punkte offen sind, trotzdem kurz erwaehnen.
-4. Dem Nutzer eine kurze Zusammenfassung geben (2-4 Saetze) inkl. Zahl der
-   erzeugten Field-Maps-Aufgaben.
-
-${HAFTUNG}
-`.trim();
-
-// --- Fallback-Koordinator (einzelner LLMAgent) --------------------------
-const KOORDINATOR_PROMPT = `
-Du bist der Koordinator des fachuebergreifenden Genehmigungs-Screenings.
-
-1. holeVorhabenKontext. Ist keine Vorauswahl getroffen bzw. wirken die Haken
-   unpassend zum Vorhabentyp: kurz begruenden, welche Rechtsgebiete relevant
-   sind, und setzePruefbereiche aufrufen.
-2. Fuer JEDES angehakte Rechtsgebiet der Reihe nach:
-   beschreibeLayer -> puffer -> queryLayer (ggf. layerTitel/where) ->
-   holeRechtsgrundlage -> meldeBefund. Offene Aspekte: merkePruefpunkt.
-   Rechtsgebiete:
-${BEREICHS_LISTE}
-3. holeBisherigeBefunde -> schreibeVermerk (fachuebergreifend, offene Punkte
-   klar getrennt) -> erzeugeTasks.
-4. Kurze Zusammenfassung fuer den Nutzer.
-
-Wenn ein Treffer auf FFH-Gebiet, Denkmal, Gewaesser o.ae. hindeutet, ziehe die
-passende Folgepruefung von dir aus nach.
-
-${HAFTUNG}
-`.trim();
-
-const KOORDINATOR_BESCHREIBUNG =
-  "Fuehrt das komplette Genehmigungs-Screening fuer den gezeichneten " +
-  "Vorhabenumring durch (die als relevant markierten Rechtsgebiete in einem " +
-  "Durchlauf), schreibt den Scoping-Vermerk und die Field-Maps-Aufgaben. Nutze " +
-  "diesen Agent, wenn der Nutzer das Screening starten will oder allgemein " +
-  "fragt, welche Genehmigungen ein Vorhaben ausloest.";
-
-// ---------------------------------------------------------------------------
-
-async function baueTriageAgent() {
-  return createLLMAgent({
-    name: "TriageAgent",
-    description:
-      "Ermittelt und begruendet, welche Rechtsgebiete fuer das konkrete Vorhaben " +
-      "relevant sind, und setzt die Pruefbereich-Auswahl. ZUERST nutzen - bevor " +
-      "das vollstaendige Screening laeuft. Nutze diesen Agent bei Fragen wie " +
-      "'welche Genehmigungen koennten relevant sein?' oder 'was muss ich pruefen?'.",
-    prompt: TRIAGE_PROMPT,
-    modelTier: MODEL_TIER,
-    tools: await baueSyntheseTools(),
-  });
-}
-
-async function baueFachAgent(bereich) {
-  return createLLMAgent({
-    name: `FachAgent_${bereich.id}`,
-    description: fachBeschreibung(bereich),
-    prompt: fachPrompt(bereich),
-    modelTier: MODEL_TIER,
-    tools: await baueTools(bereich.id),
-  });
-}
-
-async function baueSyntheseAgent() {
-  return createLLMAgent({
-    name: "SyntheseAgent",
-    description: "Fasst die Befunde zu Vermerk + Field-Maps-Aufgaben zusammen.",
-    prompt: SYNTHESE_PROMPT,
-    modelTier: MODEL_TIER,
-    tools: await baueSyntheseTools(),
-  });
-}
-
-async function baueKoordinator(fachAgenten) {
-  try {
-    const synthese = await baueSyntheseAgent();
-    const workflow = await createSequentialWorkflow({
-      agents: [...fachAgenten, synthese],
-    });
-    return await createWorkflowAgent({
-      name: "GesamtScreeningAgent",
-      description: KOORDINATOR_BESCHREIBUNG,
-      workflow,
-    });
-  } catch (err) {
-    console.warn(
-      "[Screening] WorkflowAgent-Koordinator nicht verfuegbar, nutze einzelnen LLMAgent:",
-      err,
-    );
-    const tools = [...(await baueTools()), ...(await baueSyntheseTools())];
-    return createLLMAgent({
-      name: "GesamtScreeningAgent",
-      description: KOORDINATOR_BESCHREIBUNG,
-      prompt: KOORDINATOR_PROMPT,
-      modelTier: MODEL_TIER,
-      tools,
-    });
-  }
-}
+const BESCHREIBUNG =
+  "Führt das räumliche Erstscreening eines raumbedeutsamen Vorhabens durch: " +
+  "Planungsregion bestimmen, Regionalplan und Gesetze auswerten, relevante " +
+  "Kartenlayer abfragen und die Ergebnisse zusammenfassen.";
 
 /**
- * Baut alle Agenten und haengt sie als <arcgis-assistant-agent> in die
- * uebergebene (noch losgeloeste) <arcgis-assistant>.
- * @param {HTMLElement} assistantEl
+ * Baut den Agenten und hängt ihn als <arcgis-assistant-agent> in die
+ * übergebene (noch losgelöste) <arcgis-assistant>.
+ *
+ * `promptText` erlaubt es, den Systemprompt aus dem Steuerpanel zu
+ * überschreiben - der Text im Panel ist damit wirklich der, mit dem der
+ * Agent läuft, und nicht bloss eine Anzeige.
  */
-export async function initAgents(assistantEl) {
-  const [triage, fachAgenten] = await Promise.all([
-    baueTriageAgent(),
-    Promise.all(PRUEFBEREICHE.map(baueFachAgent)),
-  ]);
-  const koordinator = await baueKoordinator(fachAgenten);
+export async function initAgents(assistantEl, promptText) {
+  const agent = await createLLMAgent({
+    name: "ScreeningAgent",
+    description: BESCHREIBUNG,
+    prompt: (promptText || SCREENING_PROMPT).trim(),
+    modelTier: MODEL_TIER,
+    tools: [...(await baueTools()), ...(await baueRechercheTools())],
+    middlewares: [fortschrittMiddleware],
+  });
 
-  for (const agent of [koordinator, triage, ...fachAgenten]) {
-    const el = document.createElement("arcgis-assistant-agent");
-    el.agent = agent.registration;
-    assistantEl.appendChild(el);
-  }
+  const el = document.createElement("arcgis-assistant-agent");
+  el.agent = agent.registration;
+  assistantEl.appendChild(el);
 
-  console.info(
-    `[Screening] ${2 + fachAgenten.length} Agenten registriert ` +
-      `(Koordinator + Triage + ${fachAgenten.length} Fach-Agenten).`,
-  );
-  return { koordinator, triage, fachAgenten };
+  console.info("[Screening] Screening-Agent registriert.");
+  return { agent };
 }
