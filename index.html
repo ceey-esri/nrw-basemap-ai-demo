@@ -3,12 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Genehmigungs-Screening</title>
+  <title>Räumliches Erstscreening</title>
 
-  <!--
-    ArcGIS wird ueber npm-Pakete geladen (siehe app.js / src/), nicht per CDN.
-    Voraussetzung dafuer, dass eigene Agents (LLMAgent) gebaut werden koennen.
-  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Avenir, wo vorhanden (macOS); sonst Nunito Sans als naechste
+       geometrisch-humanistische Verwandte. -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;0,6..12,800&display=swap"
+    rel="stylesheet"
+  />
   <link rel="stylesheet" href="/style.css" />
 </head>
 
@@ -16,94 +20,133 @@
   <div id="app">
 
     <header id="topbar">
-      <div class="titel">
-        <strong>Genehmigungs-Screening</strong>
-        <span class="untertitel">Bauantrag &amp; Bauleitplanung &middot; ArcGIS</span>
-      </div>
+      <img class="brand-logo" src="/esri-deutschland.png" alt="Esri Deutschland" />
+      <span class="brand-name" data-i18n="brand.name">Räumliches Erstscreening</span>
       <div class="auth">
+        <button id="lang-btn" type="button" class="btn btn-ghost btn-mini" data-i18n="lang.toggle"
+          data-i18n-title="lang.toggleTitle">EN</button>
         <span id="login-status" class="login-status">Nicht angemeldet</span>
-        <button id="login-btn" type="button">Anmelden</button>
+        <button id="login-btn" type="button" class="btn btn-ghost">Anmelden</button>
       </div>
     </header>
 
     <div id="main">
 
-      <!-- Steuerung -->
       <aside id="left-panel">
-        <div class="panel-section">
-          <p class="panel-label">1 &middot; Vorhabentyp</p>
-          <select id="vorhaben-typ" class="option-select">
-            <option value="">- bitte waehlen -</option>
-            <option value="Windenergieanlage">Windenergieanlage</option>
-            <option value="Wohngebaeude (Neubau)">Wohngebaeude (Neubau)</option>
-            <option value="Gewerbe-/Industriebau">Gewerbe-/Industriebau</option>
-            <option value="Landwirtschaftliches Gebaeude">Landwirtschaftliches Gebaeude</option>
-            <option value="Strasse / Verkehrsweg">Strasse / Verkehrsweg</option>
-            <option value="Leitung / Trasse">Leitung / Trasse</option>
-            <option value="Abgrabung / Aufschuettung">Abgrabung / Aufschuettung</option>
-            <option value="Freiflaechen-Photovoltaik">Freiflaechen-Photovoltaik</option>
-            <option value="Bauleitplanung (Bebauungsplan)">Bauleitplanung (Bebauungsplan)</option>
-            <option value="Sonstiges">Sonstiges</option>
-          </select>
-        </div>
+        <div class="resizer" id="lp-resizer" data-i18n-title="resizer.title" title="Breite ziehen"></div>
+        <div class="lp-scroll">
 
-        <div class="panel-section">
-          <p class="panel-label">2 &middot; Vorhabenumring</p>
-          <p class="hint">
-            Mit dem Zeichenwerkzeug oben links in der Karte den Vorhabenumring
-            bzw. Geltungsbereich zeichnen - als Polygon, Freihand-Polygon oder
-            Rechteck.
-          </p>
-          <button id="umring-loeschen-btn" type="button" class="option-btn">
-            Umring loeschen
-          </button>
-          <p id="umring-status" class="hint">Kein Umring gezeichnet.</p>
-        </div>
+          <div class="card" id="karte-vorhaben">
+            <div class="card-title">
+              <span data-i18n="step1.title">Vorhabenart wählen</span>
+              <span class="haken" id="haken-vorhaben" hidden aria-hidden="true"></span>
+            </div>
+            <div id="vorhaben-typ" class="choice-grid"></div>
+          </div>
 
-        <div class="panel-section">
-          <p class="panel-label">3 &middot; Pruefbereiche</p>
-          <p class="hint">
-            Vorauswahl. Die Triage im Assistenten passt die Haken an das konkrete
-            Vorhaben an.
-          </p>
-          <div id="pruefbereich-liste" class="option-group"></div>
-        </div>
+          <div class="card" id="karte-geometrie">
+            <div class="card-title">
+              <span data-i18n="step2.title">Geometrie zeichnen</span>
+              <span class="haken" id="haken-geometrie" hidden aria-hidden="true"></span>
+            </div>
+            <div class="sketch-zeile">
+              <div id="sketch-slot"></div>
+              <button id="geom-weg" type="button" class="geom-weg" disabled
+                data-i18n-title="map.geomDelete" title="Alle Geometrieangaben löschen"
+                aria-label="Alle Geometrieangaben löschen">
+                <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+                  <path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.2a1 1 0 001 .8h3.8a1 1 0 001-.8l.6-8.2"
+                    fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <p id="geom-status" class="muted">Keine Geometrie gezeichnet.</p>
 
-        <div class="panel-section">
-          <p class="panel-label">4 &middot; Pruefauftrag</p>
-          <p class="hint">
-            Rechts im Assistenten: erst &bdquo;Welche Rechtsgebiete sind relevant?&ldquo;,
-            dann &bdquo;Screening starten&ldquo;.
-          </p>
+            <details class="mini" id="import-shp">
+              <summary>
+                <span data-i18n="import.shapefile">Shapefile hochladen</span>
+                <span class="info-punkt" data-i18n-title="import.shapefileHilfe"
+                  title="Den Ordner wählen, in dem die .shp liegt - .shx, .dbf und .prj werden automatisch mitgenommen."
+                  aria-hidden="true">i</span>
+              </summary>
+              <input id="shp-input" class="input" type="file" multiple webkitdirectory
+                accept=".zip,.shp,.shx,.dbf,.prj,.cpg,.sbn,.sbx" />
+              <div id="shp-gewaehlt" class="datei-chip" hidden>
+                <span id="shp-name"></span>
+                <button id="shp-weg" type="button" class="datei-weg"
+                  data-i18n-title="import.entfernen" title="Datei entfernen"
+                  aria-label="Datei entfernen">&#215;</button>
+              </div>
+            </details>
+
+            <details class="mini" id="import-koord">
+              <summary data-i18n="import.koordinaten">Koordinaten eingeben</summary>
+              <label class="import-feld"><span id="koord-label">Koordinaten</span>
+                <select id="koord-format" class="input"></select>
+                <span class="import-zeile">
+                  <input id="koord-input" class="input" type="text" placeholder="51.5145, 7.4653" />
+                  <button id="koord-btn" type="button" class="btn btn-outline btn-mini"
+                    data-i18n="import.setzen">Setzen</button>
+                </span>
+              </label>
+            </details>
+            <p id="import-status" class="muted"></p>
+          </div>
+
+          <textarea id="kommentar" class="input kommentar" rows="3"
+            data-i18n-ph="step1.commentPh"
+            placeholder="Ergänzende Hinweise zum Vorhaben (optional)."></textarea>
+
+          <details class="mini nachricht" id="preview-details">
+            <summary data-i18n="preview.summary">Nachricht an den Assistenten (bearbeitbar)</summary>
+            <textarea id="screening-preview" class="input mono" rows="7" spellcheck="false"></textarea>
+          </details>
+
+          <div class="aktion">
+            <button id="screening-btn" type="button" class="btn btn-primary btn-block" disabled
+              data-i18n="btn.screening">Screening starten</button>
+          </div>
+
+          <div class="card" id="fortschritt-panel" hidden>
+            <div class="card-title" data-i18n="progress.title">Ablauf</div>
+            <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
+            <div id="progress-label" class="progress-label"></div>
+            <p id="abschluss" class="abschluss" hidden data-i18n="an.abgeschlossen">
+              Screening abgeschlossen.
+            </p>
+          </div>
+
         </div>
       </aside>
 
-      <!-- Karte -->
-      <main id="map-container"></main>
+      <main id="map-container">
+        <div id="feature-popup" hidden>
+          <button id="fp-close" class="fp-close" type="button" aria-label="Schließen">&#215;</button>
+          <div id="feature-popup-inhalt"></div>
+        </div>
+      </main>
 
-      <!-- Assistent + Ergebnis -->
       <aside id="right-panel">
-        <section id="assistant-slot"></section>
+        <div class="resizer" id="rp-resizer" data-i18n-title="resizer.title" title="Breite ziehen"></div>
+        <div class="rp-scroll">
 
-        <section class="panel-section">
-          <p class="panel-label">Befunde</p>
-          <div id="results"></div>
-          <button id="pdf-btn" type="button" class="option-btn" disabled>
-            PDF-Uebersicht erzeugen
-          </button>
-        </section>
+          <div class="card card-grow">
+            <div class="card-head">
+              <span class="card-title" data-i18n="results.title">Ergebnis</span>
+              <span class="card-head-actions">
+                <button id="pdf-btn" type="button" class="btn btn-mini btn-outline" disabled data-i18n="btn.pdf">PDF</button>
+              </span>
+            </div>
+            <div id="results" class="results-box"></div>
+          </div>
 
-        <section class="panel-section">
-          <p class="panel-label">Scoping-Vermerk (Entwurf)</p>
-          <textarea id="vermerk" rows="12" readonly
-            placeholder="Wird nach dem Screening befuellt."></textarea>
-          <button id="vermerk-copy-btn" type="button" class="option-btn">
-            In Zwischenablage kopieren
-          </button>
-        </section>
+        </div>
       </aside>
 
     </div>
+
+    <section id="assistant-slot" aria-hidden="true"></section>
+
   </div>
 
   <script type="module" src="/app.js"></script>
