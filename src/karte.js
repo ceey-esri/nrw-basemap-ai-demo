@@ -297,6 +297,7 @@ export async function initKarte(container, sketchContainer) {
   // Einmalige Schema-Diagnose des Grenzlayers. Die Zuordnung zur
   // Planungsregion steht und faellt damit, welche Attribute er fuehrt.
   grenzlayerDiagnose();
+  merkeLayerViews();
 
   window.__mapEl = mapEl;
   return mapEl;
@@ -650,11 +651,17 @@ export function setzeLayerSichtbar(titel, an) {
  * @param {Array<number|string>} objectIds
  * @param {string|null} [where]
  */
-// Grenze fuer eine IN-Liste aus ObjectIDs in der definitionExpression -
-// darueber wird die Anfrage-URL zu lang.
-// Obergrenze fuer eine IN-Liste aus ObjectIDs in der definitionExpression.
-// Entspricht MAX_TREFFER in tools.js - mehr Objekte holen wir gar nicht erst.
-const MAX_ID_FILTER = 2000;
+// Obergrenze fuer eine IN-Liste in der definitionExpression - nur noch der
+// RUECKFALL, wenn der LayerView-Filter nicht greift (nicht-numerische IDs,
+// LayerView nicht da).
+//
+// Bemessen an der URL-Laenge, nicht an MAX_TREFFER: eine ObjectID belegt mit
+// Komma rund 7 Zeichen, 200 IDs also etwa 1.400 - zusammen mit dem Rest der
+// Kachel-URL schon nahe am Ueblichen. Der frueher hier stehende Wert 2000
+// waere ueber 14.000 Zeichen gewesen; Kachelanfragen schlugen entsprechend
+// fehl. Darueber bleibt der Layer lieber UNGEFILTERT sichtbar als unsichtbar:
+// zu viel zu zeigen ist ein erkennbarer Fehler, ein leerer Layer nicht.
+const MAX_ID_FILTER = 200;
 
 // Titel-Teilstrings, an denen ein Hintergrundlayer zu erkennen ist.
 const GRUNDKARTE_TITEL = ["grundkarte", "basemap", "hintergrund", "basiskarte", "topographie"];
@@ -680,7 +687,49 @@ export function alleLayerAus() {
       l.definitionExpression = l.__urFilter;
       delete l.__urFilter;
     }
+    // Den LayerView-Filter ebenso zuruecknehmen - sonst bliebe er beim
+    // naechsten Einblenden stehen und zeigte die Treffer des Vorlaufs.
+    // Synchron, siehe die Begruendung in zeigeLayerGefiltert().
+    if (l.__lvGefiltert) {
+      delete l.__lvGefiltert;
+      if (l.__lv) l.__lv.filter = null;
+    }
   });
+}
+
+/**
+ * Holt die LayerView jedes operativen Layers EINMAL und haengt sie an den
+ * Layer. Damit bleibt das Filtern der Treffer synchron - siehe
+ * zeigeLayerGefiltert().
+ *
+ * `view.whenLayerView` loest erst, wenn der Layer in der Ansicht aufgebaut
+ * ist (View.d.ts:808). Fuer Layer, die keine LayerView mit `filter` haben,
+ * bleibt `__lv` leer und der definitionExpression-Rueckfall greift.
+ */
+async function merkeLayerViews() {
+  const map = mapEl?.map;
+  const view = mapEl?.view;
+  if (!map || !view?.whenLayerView) return;
+
+  const offen = [];
+  map.allLayers.forEach((l) => {
+    if (l.__eigen || istGrundkarte(l) || typeof l.visible !== "boolean") return;
+    offen.push(l);
+  });
+
+  const ergebnis = await Promise.allSettled(
+    offen.map(async (l) => {
+      const lv = await view.whenLayerView(l);
+      if (lv && "filter" in lv) l.__lv = lv;
+    }),
+  );
+  const ohne = offen.filter((l) => !l.__lv).map((l) => l.title);
+  console.info(
+    `[karte] LayerViews bereit: ${offen.length - ohne.length}/${offen.length}` +
+      (ohne.length ? ` - ohne filter-Faehigkeit: ${ohne.join(", ")}` : ""),
+  );
+  const kaputt = ergebnis.filter((r) => r.status === "rejected");
+  if (kaputt.length) console.warn("[karte] LayerView nicht erhalten:", kaputt.length);
 }
 
 /** Hintergrundlayer der Webmap - erkennbar am Titel bzw. am Layertyp. */
@@ -714,23 +763,61 @@ export function zeigeLayerGefiltert(titel, objectIds) {
   map.allLayers.forEach((l) => {
     if (l.title !== titel) return;
     const feld = l.objectIdField;
-    if (!feld || !ids.length || ids.length > MAX_ID_FILTER) {
+    if (!feld || !ids.length) {
       console.warn("[karte] Kein ID-Filter moeglich, Layer bleibt ausgeblendet:", titel, {
         objectIds: ids.length,
         objectIdField: feld ?? null,
       });
       return;
     }
-    if (!Object.prototype.hasOwnProperty.call(l, "__urFilter")) {
-      l.__urFilter = l.definitionExpression ?? null;
-    }
-    l.definitionExpression = `${feld} IN (${ids.join(",")})`;
+
     l.visible = true;
     let p = l.parent;
     while (p && typeof p.visible === "boolean") {
       p.visible = true;
       p = p.parent;
     }
+
+    // Erste Wahl: der Filter der LayerView. Er wirkt CLIENTSEITIG - die IDs
+    // gehen nie in eine Anfrage-URL.
+    //
+    // Vorher lief das ausschliesslich ueber `definitionExpression`, und die
+    // haengt der Layer an JEDE Kachelanfrage an. 277 ObjectIDs sind dort rund
+    // 1.900 Zeichen, der alte Deckel von 2.000 IDs waere ueber 14.000 - weit
+    // jenseits dessen, was ein Dienst in einer URL annimmt. Im Lauf vom
+    // 2026-10-11 schlugen unmittelbar nach dem Setzen der Filter 161
+    // Kachelanfragen fehl, verteilt auf die 12 Kacheln des Sichtfelds.
+    //
+    // `FeatureFilter.objectIds` ist genau dafuer gedacht (FeatureFilter.d.ts:205,
+    // FeatureLikeLayerView.filter seit 4.11). Die Kacheln laden unveraendert,
+    // nur die Darstellung wird eingeschraenkt.
+    //
+    // Die LayerView liegt aus `merkeLayerViews()` bereits vor. Das ist der
+    // Grund, warum diese Funktion SYNCHRON bleibt: wuerde sie die LayerView
+    // selbst per await holen, koennte das Zuruecknehmen in alleLayerAus() nach
+    // dem Setzen landen und den frischen Filter wieder loeschen - bei schnellen
+    // Klicks in der Ergebnisliste ein Wettrennen mit leerer Karte als Ausgang.
+    const zahlen = ids.map(Number).filter((n) => Number.isFinite(n));
+    if (l.__lv && zahlen.length === ids.length) {
+      l.__lv.filter = { objectIds: zahlen };
+      l.__lvGefiltert = true;
+      return;
+    }
+
+    // Rueckfall fuer nicht-numerische IDs oder fehlende LayerView. Der Deckel
+    // ist hier an der URL-Laenge bemessen, nicht an MAX_TREFFER.
+    if (ids.length > MAX_ID_FILTER) {
+      console.warn(
+        "[karte] Zu viele IDs fuer einen definitionExpression-Filter, Layer bleibt ungefiltert sichtbar:",
+        titel,
+        { objectIds: ids.length, deckel: MAX_ID_FILTER },
+      );
+      return;
+    }
+    if (!Object.prototype.hasOwnProperty.call(l, "__urFilter")) {
+      l.__urFilter = l.definitionExpression ?? null;
+    }
+    l.definitionExpression = `${feld} IN (${ids.join(",")})`;
   });
 }
 
