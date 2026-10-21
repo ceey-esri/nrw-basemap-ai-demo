@@ -89,6 +89,7 @@ const DICT = {
     "an.schliessen": "Schließen",
     "an.geltenderPlan": "Regionalplan",
     "an.zuordnung": "Zuordnung über",
+    "an.passagenAnker": "Tatbestandsnormen der Belange (gezielt geholt)",
     "an.passagenRp": "Passagen aus dem Regionalplan",
     "an.passagenGesetz": "Passagen aus dem Gesetzeskorpus",
     "an.stand": "Stand:",
@@ -97,6 +98,12 @@ const DICT = {
     "an.layerAus": "Layer ausblenden",
     "an.layerEin": "Layer einblenden",
     "an.zoneZeigen": "Zone in der Karte zeigen",
+    "an.radiusBelegt":
+      "Diese Meterzahl kommt im Wortlaut der abgerufenen Passagen vor. Geprüft ist die Zahl, nicht ihre fachliche Bedeutung.",
+    "an.radiusBelegtMit":
+      "Diese Meterzahl steht im Wortlaut von {quelle}. Geprüft ist die Zahl, nicht ihre fachliche Bedeutung — die Norm kann sie als Abstand, Länge oder Höhe führen.",
+    "an.radiusAnnahme":
+      "ACHTUNG: Diese Weite steht in KEINER der abgerufenen Passagen. Sie ist eine Annahme des Modells, keine Angabe aus Regionalplan oder Fachrecht.",
     "an.fundstelleRp": "Regionalplan",
     "an.fundstelleGesetz": "Fachrecht",
     "an.leer": "Noch kein Screening gelaufen.",
@@ -171,18 +178,18 @@ const DICT = {
       "meldeRelevanz oder mit meldeNichtRelevant. Keine Kategorie darf ohne Meldung bleiben. " +
       "Noch keine Layer abfragen.",
     "instr.phase2Liste":
-      "Diese {n} Kategorien wurden in Phase 1 als relevant gemeldet. Frage für JEDE davon die " +
-      "genannten Layer mit queryLayer ab - die Untersuchungszone ist bereits angelegt, du " +
-      "musst nichts puffern:",
+      "Diese {n} Kategorien wurden in Phase 1 als relevant gemeldet. Rufe für JEDE davon " +
+      "pruefeKategorie auf - der Layer-Subagent übernimmt die Abfrage, die " +
+      "Untersuchungszone ist bereits angelegt:",
     "instr.phase2":
       "PHASE 2 (Objekte): Ermittle für jede zuvor als relevant gemeldete Kategorie die " +
       "Objekte im Untersuchungsraum und fasse das Ergebnis zusammen.",
     "instr.nachfassenLayer":
-      "NACHFASSEN zu Phase 2: Zu diesen relevanten Kategorien passen weitere Layer, die du " +
-      "noch nicht abgefragt hast: {liste}. Prüfe jeden davon mit beschreibeLayer und frage " +
-      "ihn mit queryLayer ab. Ist ein Layer fachlich wirklich nicht einschlägig, sag das " +
-      "ausdrücklich - aber übergehe ihn nicht stillschweigend. Danach fasseZusammen erneut " +
-      "aufrufen, damit die Zahlen stimmen.",
+      "NACHFASSEN zu Phase 2: Zu diesen relevanten Kategorien passen weitere Layer, die " +
+      "noch nicht abgefragt wurden: {liste}. Rufe pruefeKategorie für diese Kategorien " +
+      "erneut auf - der Subagent erfährt, was bereits abgefragt ist, und nimmt die " +
+      "offenen Layer. Hält er einen fachlich für nicht einschlägig, sagt er das " +
+      "ausdrücklich. Danach fasseZusammen erneut aufrufen, damit die Zahlen stimmen.",
     "instr.langNote": "Antworte auf Deutsch.",
   },
 
@@ -268,6 +275,7 @@ const DICT = {
     "an.schliessen": "Close",
     "an.geltenderPlan": "Regional plan",
     "an.zuordnung": "Matched via",
+    "an.passagenAnker": "Norms defining each concern (fetched by citation)",
     "an.passagenRp": "Passages from the regional plan",
     "an.passagenGesetz": "Passages from the legal corpus",
     "an.stand": "As of:",
@@ -276,6 +284,12 @@ const DICT = {
     "an.layerAus": "Hide layer",
     "an.layerEin": "Show layer",
     "an.zoneZeigen": "Show zone on the map",
+    "an.radiusBelegt":
+      "This figure appears verbatim in the retrieved passages. The number is verified, not its legal meaning.",
+    "an.radiusBelegtMit":
+      "This figure appears verbatim in {quelle}. The number is verified, not its legal meaning — the provision may use it as a distance, a length or a height.",
+    "an.radiusAnnahme":
+      "NOTE: this distance appears in NONE of the retrieved passages. It is the model’s assumption, not a figure from the regional plan or sectoral law.",
     "an.fundstelleRp": "Regional plan",
     "an.fundstelleGesetz": "Sectoral law",
     "an.leer": "No screening run yet.",
@@ -347,16 +361,16 @@ const DICT = {
       "with recherchiere and then report it - either with meldeRelevanz or meldeNichtRelevant. " +
       "No category may remain unreported. Do not query any layers yet.",
     "instr.phase2Liste":
-      "These {n} categories were reported as relevant in phase 1. Query the listed layers for " +
-      "EACH of them with queryLayer - the study zone already exists, you do not need to buffer:",
+      "These {n} categories were reported as relevant in phase 1. Call pruefeKategorie for " +
+      "EACH of them - the layer subagent does the querying, the study zone already exists:",
     "instr.phase2":
       "PHASE 2 (objects): for every theme reported as relevant, determine the objects within the " +
       "study area and summarise the result.",
     "instr.nachfassenLayer":
-      "FOLLOW-UP to phase 2: these relevant categories have further matching layers you have " +
-      "not queried yet: {liste}. Inspect each with beschreibeLayer and query it with " +
-      "queryLayer. If a layer genuinely does not apply, say so explicitly - do not skip it " +
-      "silently. Then call fasseZusammen again so the figures are correct.",
+      "FOLLOW-UP to phase 2: these relevant categories have further matching layers that " +
+      "were not queried yet: {liste}. Call pruefeKategorie again for those categories - the " +
+      "subagent is told what has already been queried and takes the open layers. Then call " +
+      "fasseZusammen again so the figures are correct.",
     "instr.langNote": "Respond in English.",
   },
 };

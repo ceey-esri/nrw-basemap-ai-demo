@@ -856,3 +856,9 @@ details.mini[open] > summary { color: var(--text); font-weight: 600; }
 
 /* Thema, auf das die Karte gerade beschraenkt ist. */
 .an-fb.fokus > .an-fb-kopf .an-summe-name { text-decoration: underline; }
+
+/* Radius ohne Beleg in den Passagen: Der Chip bekommt einen Stern und eine
+   gestrichelte Kante - eine geratene Zahl darf nicht so verbindlich aussehen
+   wie eine aus dem Gesetz. Der Tooltip nennt den Grund. */
+.an-umfeld.unbelegt { border-style: dashed; }
+.an-umfeld-stern { margin-left: 2px; font-weight: 700; }

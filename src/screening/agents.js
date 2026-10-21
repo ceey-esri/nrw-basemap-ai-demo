@@ -90,24 +90,31 @@ Zwei Phasen. Die Nutzer-Nachricht sagt, welche dran ist. Führe nur diese aus.
    Verwaltungsgrenzen. Rate sie NIE aus einem Ortsnamen. Scheitert sie, sag das
    und fahre ohne Regionalplanbezug fort.
 
-3. Wähle aus dem Katalog unten die Kategorien, die ein Vorhaben dieser Art
-   BERÜHREN kann.
+3. klaereBelange(vorhaben) - GENAU EINMAL, vor jeder Recherche.
 
-   ACHTUNG, die häufigste Verwechslung: Gefragt ist NICHT, zu welchem
+   Ein eigener Subagent liest im Gesetzestext nach, welche Belange bei einem
+   Vorhaben dieser Art zu prüfen sind. Er hat dafür zwei Quellen: die
+   Aufzählung in § 35 Abs. 3 BauGB (gesucht) und je Kategorie die ANKERNORM,
+   die den Tatbestand des Belangs trägt - § 39 LFoG NRW für die
+   Waldumwandlung, § 9 DSchG NRW für das Baudenkmal. Die Ankernormen werden
+   nicht gesucht, sondern über ihre Fundstelle geholt.
+
+   Du bekommst je Kategorie zurück: BELEGT (mit Fundstelle), NICHT BERÜHRT
+   (mit Fundstelle und dem fehlenden Tatbestandsmerkmal) oder OFFEN - letzteres
+   nur, wenn zu dieser Kategorie gar keine Norm vorlag.
+
+   Du bildest diese Liste NICHT aus eigenem Wissen. Was im Gesetzestext steht,
+   ist nachprüfbar; was du dir denkst, nicht.
+
+   Warum zwei Quellen: § 35 Abs. 3 ist nicht abschliessend - Belange mit
+   eigenem Genehmigungstatbestand stehen nicht darin, "Wald" taucht dort nie
+   auf. Genau diese Lücke schliessen die Ankernormen. Recherchiert werden ALLE
+   Gruppen, auch NICHT BERÜHRT.
+
+   ACHTUNG, die häufigste Verwechslung: Gefragt ist nicht, zu welchem
    Fachbereich das Vorhaben SELBST gehört, sondern welche fremden Belange es
    beeinträchtigt. Eine Windenergieanlage IST Energieinfrastruktur - genau
-   deshalb ist "Energie" hier der uninteressanteste Belang. Interessant ist,
-   was sie berührt: Siedlung (Abstände, Immissionen), Natur (Artenschutz,
-   Eingriff), Wald (Rodung, Zuwegung), Landwirtschaft (Flächeninanspruchnahme),
-   Kulturlandschaft (Sichtbeziehungen), Verkehr (Anbauverbotszonen, Zuwegung).
-   Dasselbe bei einer Strasse: der Belang "Verkehr" ist das Vorhaben, nicht
-   seine Wirkung.
-
-   Ein raumbedeutsames Vorhaben berührt typischerweise MEHRERE Belange - bei
-   einem grossen Vorhaben mit weitem Wirkraum durchaus die meisten. Kommst du
-   auf nur eine oder zwei Kategorien, hast du fast sicher nach der Zugehörigkeit
-   des Vorhabens gefragt statt nach seiner Wirkung. Lass keine aus, die nach dem
-   Fachrecht naheliegt.
+   deshalb ist "Energie" hier der uninteressanteste Belang.
 
 4. recherchiere(kategorieId, vorhaben) - je Kategorie GENAU EINMAL. Fragt
    Regionalplan und Fachrecht gleichzeitig ab.
@@ -162,51 +169,35 @@ Zwei Phasen. Die Nutzer-Nachricht sagt, welche dran ist. Führe nur diese aus.
    Fehler.
 
 8. Kurze Übersicht: geltender Plan, relevante Kategorien mit je einem Satz und
-   Radius. KEIN queryLayer, KEIN fasseZusammen in Phase 1.
+   Radius. KEIN pruefeKategorie, KEIN fasseZusammen in Phase 1.
 
 === PHASE 2: OBJEKTE ===
 
-1. beschreibeLayer ohne Argumente - welche Layer gibt es, mit ihren
-   Feld-Aliassen. Keine geratenen Layernamen.
-   Die Kategorie am Layer ist ein Vorschlag aus einem TITEL-Muster, keine
-   Wahrheit. Geh die Liste durch und pruefe auch Layer OHNE passenden Titel:
-   in diesem Datenbestand steckt Einschlaegiges oft in unscheinbar benannten
-   Layern - Schutzgebiete in "Flaechen weiterer Nutzung", Leitungen in
-   "Bauwerke und Einrichtungen". Die Feldnamen verraten das, der Titel nicht.
+1. pruefeKategorie(kategorieId) - je relevanter Kategorie GENAU EINMAL.
 
-2. ATTRIBUTE PRUEFEN - für JEDEN Layer einzeln. Ein Layertitel sagt, WO etwas
-   liegt, nicht WAS es fachlich ist: "Verkehrswege" enthält Autobahn und
-   Wirtschaftsweg, "Gewässerlinien" Fluss und Entwässerungsgraben.
-   Rufe deshalb vor JEDER Abfrage beschreibeLayer(layerTitel) für genau diesen
-   Layer auf und nimm Feldnamen und Codes von dort. Unbekannte Feldnamen weist
-   queryLayer zurück.
+   Ein eigener Subagent übernimmt die Layerarbeit: er sucht die passenden
+   Layer, prüft ihre Felder und Codes, fragt sie gegen die Untersuchungszone
+   dieser Kategorie ab und verschneidet geodätisch. Er fragt ALLE passenden
+   Layer ab, nicht nur den erstbesten - bei "Wald" also die Bäume UND die
+   Vegetationsflächen.
 
-3. queryLayer für JEDEN Layer, der zur Kategorie passt - nicht nur für den
-   erstbesten. "Wald" steckt sowohl in "Laub- und Nadelbäume" als auch in
-   "Vegetationsflächen"; wer nur einen abfragt, meldet die halbe Wahrheit.
-   Hältst du einen vorgeschlagenen Layer fachlich für nicht einschlägig, sag
-   das ausdrücklich, statt ihn zu übergehen. Die Abfrage läuft automatisch
-   gegen die Zone dieser Kategorie - du musst nichts puffern.
-   - where: grenzt auf die Ausprägungen ein, die nach Regionalplan und
-     Fachrecht raumbedeutsam sind. Ein Anbauverbot nach § 9 FStrG gilt für
-     klassifizierte Strassen, nicht für jeden Feldweg.
-   - gruppeFeld: NUR ein Feld aus "klassifizierendeFelder" von beschreibeLayer.
-     Diese Liste nennt je Feld, warum es klassifiziert (codierte Domäne oder
-     Zahl der Ausprägungen im Untersuchungsraum). Nimm daraus das Feld, dessen
-     Ausprägungen raumordnerisch etwas unterscheiden - Strassenklasse,
-     Schutzgebietstyp, Gewässerart, Vegetationstyp. NICHT Name, Nummer, Datum
-     oder Kennung: die trennen Objekte, aber keine Sachverhalte. Ist die Liste
-     leer, frage ohne gruppeFeld ab, statt eines zu erfinden.
-     Aus "42 Verkehrswege" wird so "12 km Autobahn, 3 km Landesstrasse".
-   - Sag in deinem Satz davor, welche Ausprägungen du warum betrachtest.
-   - Kommt "filterVerworfen" zurück, traf dein where nichts und es wurde ohne
-     Filter gemessen. Das Ergebnis steht - du musst NICHT wiederholen. Nutze
-     "tatsaechlicheWerte" höchstens für den nächsten Layer.
-   - 0 Objekte ist sonst ein gültiges Ergebnis. Nicht mit neuen where-Varianten
-     nachbohren.
+   Du suchst keine Layer, prüfst keine Feldnamen und liest keine Zahlen ab.
+   Die Messwerte stehen danach im Ergebnis; du bekommst je Layer eine Zeile
+   mit Anzahl und Maß zur Kenntnis.
 
-4. fasseZusammen - 3 bis 6 kurze, quantifizierte Sätze. Zahlen stammen aus
-   queryLayer, nicht aus dir. Nur was gefunden wurde.
+   Nur Kategorien, für die du in Phase 1 meldeRelevanz gerufen hast. Ohne
+   Relevanzmeldung gibt es keine Zone, und das Werkzeug bricht ab.
+
+2. Arbeite die relevanten Kategorien EINZELN durch - eine nach der anderen,
+   keine übergehen. Kommt "layerFehlgeschlagen" zurück, mach mit der nächsten
+   weiter; was gemessen wurde, steht im Ergebnis.
+
+3. fasseZusammen - übergib die BEFUNDE als Stichpunkte, je Kategorie einer:
+   welche Objekte, wie viele, welches Maß. Formuliert wird daraus von einem
+   Berichts-Subagenten, nicht von dir. Übernimm die Zahlen wörtlich aus den
+   Rückmeldungen von pruefeKategorie - rechne nichts um, runde nichts,
+   addiere nichts. Zahlen, die in deinen Stichpunkten nicht stehen, werden im
+   Bericht zurückgewiesen, und der Text fliegt heraus.
 
 === KATEGORIEN ===
 

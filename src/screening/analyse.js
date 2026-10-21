@@ -445,7 +445,10 @@ const massLabel = () =>
       : t("kpi.mass");
 
 function kopfHtml() {
-  const anzahlQuellen = alleFundstellen("regionalplan:").length + alleFundstellen("gesetz:").length;
+  const anzahlQuellen =
+    alleFundstellen("regionalplan:").length +
+    alleFundstellen("gesetz:").length +
+    alleFundstellen("anker:").length;
 
   // Summen über alle Themen hinweg sind fachlich sinnlos - ein Naturschutz-
   // gebiet und ein Wirtschaftsweg addieren sich zu nichts. Die Zahlen stehen
@@ -485,9 +488,25 @@ function kopfHtml() {
 function umfeldChip(id, r) {
   if (!r || r.radiusMeter == null) return "";
   const aktiv = zoneSichtbar(id);
-  const tip = r.radiusBegruendung ? `${r.radiusBegruendung} - ${t("an.zoneZeigen")}` : t("an.zoneZeigen");
-  return `<button type="button" class="an-zone an-umfeld${aktiv ? " aktiv" : ""}"
-    data-fb="${esc(id)}" title="${esc(tip)}">${esc(t("an.umfeld"))} ${nf().format(r.radiusMeter)} m</button>`;
+
+  // Woher kommt die Zahl? Steht sie in einer abgerufenen Passage, gilt sie als
+  // belegt und der Tooltip nennt die Fundstelle. Steht sie nirgends, ist sie
+  // eine Annahme des Modells - und das muss am Chip ablesbar sein, nicht nur
+  // in der Konsole. Ohne diesen Vermerk sieht eine geratene Zahl genauso
+  // verbindlich aus wie eine aus dem Gesetz.
+  const belegt = r.radiusBelegt !== false;
+  const herkunft = belegt
+    ? r.radiusFundstelle
+      ? t("an.radiusBelegtMit", { quelle: r.radiusFundstelle })
+      : t("an.radiusBelegt")
+    : t("an.radiusAnnahme");
+  const tip = [r.radiusBegruendung, herkunft, t("an.zoneZeigen")].filter(Boolean).join(" · ");
+
+  return `<button type="button" class="an-zone an-umfeld${aktiv ? " aktiv" : ""}${
+    belegt ? "" : " unbelegt"
+  }" data-fb="${esc(id)}" title="${esc(tip)}">${esc(t("an.umfeld"))} ${nf().format(
+    r.radiusMeter,
+  )} m${belegt ? "" : '<span class="an-umfeld-stern" aria-hidden="true">*</span>'}</button>`;
 }
 
 /**
@@ -970,6 +989,11 @@ function themenHtml() {
 function grundlagenInhalt() {
   const rp = alleFundstellen("regionalplan:");
   const ges = alleFundstellen("gesetz:");
+  // Die Ankernormen sind die Rechtsgrundlage der Einstufung BELEGT /
+  // NICHT BERÜHRT - sie gehören damit zu den herangezogenen Grundlagen.
+  // Sie stehen zuerst, weil sie nicht gesucht, sondern über ihre
+  // Fundstelle geholt wurden; bei ihnen gibt es nichts zu bezweifeln.
+  const anker = alleFundstellen("anker:");
 
   const passage = (f) => `
     <div class="an-passage">
@@ -997,9 +1021,10 @@ function grundlagenInhalt() {
           : ""
       }
       ${region?.gefundenUeber ? `<p class="an-fundstelle"><span>${esc(t("an.zuordnung"))}</span>${esc(region.gefundenUeber)}</p>` : ""}
+      ${anker.length ? `<div class="an-block-titel">${esc(t("an.passagenAnker"))}</div>${anker.map(passage).join("")}` : ""}
       ${rp.length ? `<div class="an-block-titel">${esc(t("an.passagenRp"))}</div>${rp.map(passage).join("")}` : ""}
       ${ges.length ? `<div class="an-block-titel">${esc(t("an.passagenGesetz"))}</div>${ges.map(passage).join("")}` : ""}
-      ${!rp.length && !ges.length ? `<p class="an-ohne">${esc(t("an.keineFundstellen"))}</p>` : ""}
+      ${!rp.length && !ges.length && !anker.length ? `<p class="an-ohne">${esc(t("an.keineFundstellen"))}</p>` : ""}
     </div>`;
 }
 

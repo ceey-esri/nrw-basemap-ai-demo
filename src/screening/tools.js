@@ -24,7 +24,12 @@ import * as geodesicBufferOperator from "@arcgis/core/geometry/operators/geodesi
 
 import { RAG_URL } from "../config.js";
 import { VORHABEN, getVorhaben } from "./vorhaben.js";
-import { KATEGORIEN, getKategorie } from "./kategorien.js";
+import {
+  KATEGORIEN,
+  getKategorie,
+  kategorienListe,
+  ankernormen,
+} from "./kategorien.js";
 import {
   REGIONEN,
   istNRW,
@@ -50,7 +55,8 @@ import {
   setzeVorhabenArt,
   getAnalyse,
 } from "./analyse.js";
-import { setzeFundstellen } from "./rag.js";
+import { setzeFundstellen, alleFundstellen } from "./rag.js";
+import { formuliereBericht } from "./bericht.js";
 import { meldeSchritt } from "./fortschritt.js";
 
 const FB_IDS = KATEGORIEN.map((f) => f.id);
@@ -357,7 +363,7 @@ function layerNachInhalt(fbId) {
  * Layer einer Kategorie: über den Titel ODER über den Inhalt. Die Titelsuche
  * allein liess Layer durchrutschen, deren Name nichts über ihren Inhalt sagt.
  */
-function layerFuerKategorieGesamt(fbId) {
+export function layerFuerKategorieGesamt(fbId) {
   const ausTitel = layerFuerKategorie(fbId);
   const bekannt = new Set(ausTitel.map((x) => x.layer.title));
   return [...ausTitel, ...layerNachInhalt(fbId).filter((x) => !bekannt.has(x.layer.title))];
@@ -583,6 +589,107 @@ async function messwerkzeugeBereit() {
       .filter((op) => !op.isLoaded())
       .map((op) => op.load()),
   );
+}
+
+// Zahlwoerter, die in Gesetzestexten statt Ziffern stehen. § 38 WHG schreibt
+// "fuenf Meter", nicht "5 m" - ohne diese Liste faende die Pruefung den
+// wichtigsten Beleg im ganzen Korpus nicht.
+const ZAHLWORT = {
+  1: ["ein", "einem", "einen"],
+  2: ["zwei"],
+  3: ["drei"],
+  4: ["vier"],
+  5: ["fünf"],
+  6: ["sechs"],
+  7: ["sieben"],
+  8: ["acht"],
+  9: ["neun"],
+  10: ["zehn"],
+  12: ["zwölf"],
+  15: ["fünfzehn"],
+  20: ["zwanzig"],
+  25: ["fünfundzwanzig"],
+  30: ["dreißig", "dreissig"],
+  40: ["vierzig"],
+  50: ["fünfzig"],
+  100: ["hundert", "einhundert"],
+};
+
+/**
+ * Steht die gemeldete Radiuszahl wirklich in den abgerufenen Passagen?
+ *
+ * Der Radius war der einzige Wert im Ergebnis, den das Modell frei setzen
+ * konnte - ohne Wertebereich und ohne Abgleich mit dem Zitat, auf das er sich
+ * berief. Zonenfläche und Trefferzahlen sahen exakt aus, ihre Bezugsgrösse war
+ * es nicht.
+ *
+ * Geprüft wird gegen den VOLLTEXT der Fundstellen, die für genau diese
+ * Kategorie abgerufen wurden - in Ziffern (1000, 1.000, 1 000) und als
+ * Zahlwort. Ein Treffer belegt nicht, dass die Zahl fachlich richtig
+ * hergeleitet ist; er belegt, dass sie im Dokument vorkommt. Das ist der
+ * Unterschied zwischen "steht so im Gesetz" und "klingt plausibel".
+ *
+ * WAS EIN TREFFER AUSDRÜCKLICH NICHT HEISST: dass die Zahl in der Norm ein
+ * ABSTAND ist. Gegenbeispiel aus dem eigenen Korpus - § 43 EnWG nennt
+ * "200 Metern" als GESAMTLÄNGE einer Freileitung, also als Schwelle für die
+ * Planfeststellung, nicht als Entfernung zu irgendetwas. Ein gemeldeter
+ * 200-m-Radius für "energie" gilt hier trotzdem als belegt. Deshalb sagt der
+ * Tooltip (`an.radiusBelegtMit`) nur, dass die ZAHL im Wortlaut steht, und
+ * nicht, dass der Radius richtig sei. Von den acht Ankernormen tragen genau
+ * zwei eine echte Abstandsangabe: § 38 WHG (fünf Meter Randstreifenbreite)
+ * und § 9 FStrG (40 bzw. 20 Meter Anbauverbotszone).
+ *
+ * @returns {{belegt: boolean, fundstelle: string|null}}
+ */
+function radiusBelegt(kategorieId, meter) {
+  if (!meter || meter <= 0) return { belegt: true, fundstelle: null };
+
+  // Die Ankernorm zuerst: sie ist nicht gesucht, sondern über ihre Fundstelle
+  // geholt, und mehrere tragen ihr Maß im Wortlaut - § 38 WHG "fünf Meter",
+  // § 9 FStrG "40 Meter"/"20 Meter", § 43 EnWG "200 Metern". Vorher hing das
+  // daran, ob die Suche die richtige Norm fand.
+  const quellen = [
+    ...alleFundstellen(`anker:${kategorieId}`),
+    ...alleFundstellen(`regionalplan:${kategorieId}`),
+    ...alleFundstellen(`gesetz:${kategorieId}`),
+  ];
+  if (!quellen.length) return { belegt: false, fundstelle: null };
+
+  // Eine Zahl allein belegt nichts - es MUSS eine Längeneinheit dahinter
+  // stehen, und sie muss zur Schreibweise passen.
+  //
+  // Vorher fehlte diese Bedingung, und bei runden Werten kippte die Prüfung
+  // deshalb komplett: "3000" wurde zusätzlich als "3" (Kilometer) gesucht, und
+  // eine nackte "3" steht in jedem Gesetzestext. Gemessen am Lauf vom
+  // 2026-10-11 meldete die Prüfung 5 von 8 Radien als belegt - belegt waren
+  // sie auf "§ 35 Abs. 3 Nr. 1" (3000 m), "Absätzen 1 und 2" (2000 m) und
+  // "Absatz 5" (5000 m). Also auf Absatznummern statt auf Abständen, und damit
+  // genau die Falschaussage, die das Werkzeug verhindern soll.
+  //
+  // Fehlt die Einheit im Dokument, gilt der Radius als unbelegt. Das ist die
+  // richtige Richtung zu irren: der Chip wird dann als Modellannahme markiert.
+  const METER = String.raw`(?:m|Meter|Metern)`;
+  const KILOMETER = String.raw`(?:km|Kilometer|Kilometern)`;
+  const esc = (f) => f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Ziffern mit und ohne Tausendertrennung, dazu die Zahlwörter - alle in
+  // Metern. § 38 WHG schreibt "fünf Meter", nicht "5 m".
+  const inMetern = [String(meter), meter.toLocaleString("de-DE"), ...(ZAHLWORT[meter] ?? [])];
+  const zweige = [`(?:${inMetern.map(esc).join("|")})\\s*-?\\s*${METER}\\b`];
+  // Nur bei runden Werten: dieselbe Länge in Kilometern geschrieben.
+  if (meter % 1000 === 0) {
+    const km = meter / 1000;
+    const inKm = [String(km), ...(ZAHLWORT[km] ?? [])];
+    zweige.push(`(?:${inKm.map(esc).join("|")})\\s*-?\\s*${KILOMETER}\\b`);
+  }
+
+  const muster = new RegExp(`(?:^|[^0-9.,])(?:${zweige.join("|")})`, "i");
+  for (const f of quellen) {
+    if (muster.test(String(f.text ?? ""))) {
+      return { belegt: true, fundstelle: f.zitat ?? null };
+    }
+  }
+  return { belegt: false, fundstelle: null };
 }
 
 /** SQL-Literal aus einem Attributwert - Zahlen ohne, Text mit Anführungszeichen. */
@@ -942,7 +1049,7 @@ async function makeBestimmeRegion() {
 }
 
 // ---------------------------------------------------------------------------
-async function makeBeschreibeLayer() {
+export async function makeBeschreibeLayer() {
   return createFunctionTool({
     name: "beschreibeLayer",
     description:
@@ -1197,6 +1304,114 @@ export async function makeHoleRegionalplan() {
 }
 
 // ---------------------------------------------------------------------------
+/**
+ * Welche Belange sind für DIESES Vorhaben überhaupt einschlägig?
+ *
+ * Die Frage, an der die Einstufung dreimal gescheitert ist - einmal kamen alle
+ * acht Kategorien relevant zurück, einmal keine, einmal genau eine. Jedes Mal
+ * hat das Modell geurteilt, und jedes Mal anders.
+ *
+ * Hier urteilt es nicht, sondern LIEST: § 35 Abs. 3 BauGB zählt die
+ * öffentlichen Belange auf, die einem Aussenbereichsvorhaben entgegenstehen
+ * können - Naturschutz, Landschaftspflege, Bodenschutz, Denkmalschutz,
+ * Wasserwirtschaft, Hochwasserschutz, Verkehr, Agrarstruktur. Die Liste steht
+ * im Gesetz, sie muss nicht erfunden werden. Gemessen liegt die Norm für alle
+ * sechs Vorhabenarten unter den ersten fünf Treffern.
+ *
+ * Das Werkzeug liefert die Passagen im Wortlaut; welche Kategorien darin
+ * benannt sind, liest das Modell ab und meldet es mit der Fundstelle.
+ */
+export async function makeErmittleBelange() {
+  return createFunctionTool({
+    name: "ermittleBelange",
+    description:
+      "ERSTER Schritt der fachlichen Prüfung, GENAU EINMAL je Lauf. Liefert zwei Dinge im " +
+      "Wortlaut: (a) passagen - die Normen, die aufzählen, welche öffentlichen Belange einem " +
+      "Vorhaben dieser Art entgegenstehen können, allen voran § 35 Abs. 3 BauGB; (b) " +
+      "ankernormen - je Kategorie des Katalogs die Norm, die den Tatbestand des Belangs " +
+      "trägt (Genehmigung, Erlaubnis, Verbot), etwa § 39 LFoG NRW für die Waldumwandlung. " +
+      "Die werden nicht gesucht, sondern über ihre Fundstelle geholt, sind also garantiert " +
+      "die richtigen. Lies beides und leite daraus ab, welche Kategorien zu prüfen sind. " +
+      "Du sollst die Liste NICHT aus eigenem Wissen bilden: was im Gesetzestext steht, " +
+      "ist nachprüfbar, was du dir denkst, nicht.",
+    resultMode: "continue",
+    inputSchema: await createSchema({
+      vorhaben: {
+        type: "string",
+        description:
+          "Die geplante Maßnahme in Kurzform, z. B. \"Errichtung einer Windenergieanlage " +
+          "im Außenbereich\". Nimm die Vorhabenart und, falls genannt, den Kommentar des " +
+          "Nutzers dazu.",
+        required: true,
+      },
+    }),
+    execute: async ({ vorhaben }) => {
+      try {
+        const data = await ragAnfrage("belange", {
+          vorhaben,
+          ankernormen: ankernormen(),
+        });
+        const passagen = data.passagen ?? [];
+        const anker = data.ankernormen ?? [];
+        const fehlend = data.ankerFehlend ?? [];
+        if (!passagen.length && !anker.length) {
+          return {
+            fehler: "Keine Passagen zu den öffentlichen Belangen gefunden.",
+            nichtWiederholen: true,
+            hinweis:
+              "Fahre mit dem vollständigen Katalog fort und prüfe jede Kategorie einzeln " +
+              "mit recherchiere.",
+          };
+        }
+        setzeFundstellen("belange:katalog", passagen.map((p) => ({ ...p, text: p.auszug })));
+        // Die Ankernormen je Kategorie ablegen, damit sie in der Sprechblase
+        // "Herangezogene Grundlagen" auftauchen - und damit radiusBelegt()
+        // sie als Quelle findet: § 38 WHG, § 9 FStrG und § 43 EnWG tragen ihre
+        // Maße im Wortlaut.
+        for (const a of anker) {
+          if (!a.kategorieId) continue;
+          setzeFundstellen(`anker:${a.kategorieId}`, [{ ...a, text: a.wortlaut }]);
+        }
+        if (fehlend.length) {
+          console.warn(
+            "[tools] Ankernorm nicht im Korpus:",
+            fehlend.map((f) => `${f.kategorieId} → ${f.zitat}`).join(", "),
+          );
+        }
+        return {
+          vorhaben,
+          passagen,
+          ankernormen: anker,
+          ankerFehlend: fehlend,
+          kategorien: kategorienListe(),
+          naechsterSchritt:
+            "Du hast zwei Quellen vor dir, und sie beantworten verschiedene Fragen. " +
+            "(a) passagen: die Aufzählung der öffentlichen Belange, allen voran § 35 Abs. 3 " +
+            "BauGB - ein Katalog, gesucht. (b) ankernormen: je Kategorie die Norm, die den " +
+            "Tatbestand trägt - nicht gesucht, sondern über ihre Fundstelle geholt, deshalb " +
+            "sicher die richtige. " +
+            "Ordne JEDE Kategorie des Katalogs einer von drei Gruppen zu: " +
+            "BELEGT - der Belang steht in einer Passage ODER seine Ankernorm knüpft einen " +
+            "Tatbestand an, den ein Vorhaben dieser Art auslösen kann; nenne die Fundstelle. " +
+            "NICHT BERÜHRT - die Ankernorm liegt vor und ihr Tatbestand kann von einem " +
+            "Vorhaben dieser Bauart nicht ausgelöst werden; nenne die Fundstelle und sage, " +
+            "welches Tatbestandsmerkmal fehlt. " +
+            "OFFEN - nur für Kategorien in ankerFehlend, zu denen also gar keine Norm vorlag. " +
+            "Gefragt ist nicht, wozu das Vorhaben GEHÖRT, sondern welche FREMDEN Belange es " +
+            "berührt. Recherchiere danach ALLE drei Gruppen einzeln mit recherchiere; " +
+            "verworfen wird erst dort und nur mit Begründung.",
+        };
+      } catch (err) {
+        return {
+          fehler: `Belange-Suche nicht erreichbar: ${err}`,
+          nichtWiederholen: true,
+          hinweis: "Fahre mit dem vollständigen Katalog fort.",
+        };
+      }
+    },
+  });
+}
+
 export async function makeHoleRechtsgrundlage() {
   return createFunctionTool({
     name: "holeRechtsgrundlage",
@@ -1283,6 +1498,17 @@ async function makeMeldeRelevanz() {
       const fb = getKategorie(kategorieId);
       if (!fb) return { fehler: `Unbekannte Kategorie: ${kategorieId}` };
 
+      // Steht die Zahl in den Passagen, die für diese Kategorie abgerufen
+      // wurden? Die Antwort geht in den Store und ans Modell zurück - und sie
+      // steht später im Tooltip am Umfeld-Chip.
+      const beleg = radiusBelegt(kategorieId, radiusMeter);
+      if (!beleg.belegt) {
+        console.info(
+          `[tools] Radius ${radiusMeter} m für "${kategorieId}" nicht in den Fundstellen ` +
+            "belegt - wird als Modellannahme gekennzeichnet.",
+        );
+      }
+
       const geom = requireVorhaben();
       await messwerkzeugeBereit();
       const zone =
@@ -1300,6 +1526,8 @@ async function makeMeldeRelevanz() {
         begruendung,
         radiusMeter,
         radiusBegruendung,
+        radiusBelegt: beleg.belegt,
+        radiusFundstelle: beleg.fundstelle,
         zoneFlaecheM2,
         regionalplan,
         gesetz,
@@ -1308,6 +1536,13 @@ async function makeMeldeRelevanz() {
         gespeichert: true,
         kategorie: fb.titel,
         radiusMeter,
+        radiusBelegt: beleg.belegt,
+        radiusHinweis: beleg.belegt
+          ? `Radius in ${beleg.fundstelle ?? "den Fundstellen"} belegt.`
+          : "Diese Zahl steht in KEINER der abgerufenen Passagen. Sie gilt als " +
+            "Modellannahme und wird im Ergebnis so gekennzeichnet. Findest du eine " +
+            "Fundstelle mit einer konkreten Meterangabe, melde die Kategorie mit DIESEM " +
+            "Wert erneut.",
         zoneFlaecheM2,
         layerVorschlag: layerFuerKategorieGesamt(kategorieId).map((x) => x.layer.title),
       };
@@ -1356,7 +1591,7 @@ async function makeMeldeNichtRelevant() {
 }
 
 // ---------------------------------------------------------------------------
-async function makeQueryLayer() {
+export async function makeQueryLayer() {
   return createFunctionTool({
     name: "queryLayer",
     description:
@@ -1757,10 +1992,13 @@ async function makeFasseZusammen() {
   return createFunctionTool({
     name: "fasseZusammen",
     description:
-      "Schliesst das Screening mit 3 bis 5 KERNAUSSAGEN ab - kein Fliesstext. " +
-      "Jede Aussage EIN kurzer Satz, quantifiziert und faktisch, z.B. " +
+      "Schliesst das Screening ab. Übergib die BEFUNDE als Stichpunkte - formuliert wird " +
+      "daraus von einem eigenen Berichts-Subagenten, nicht von dir. " +
+      "Jeder Stichpunkt EINE kurze, quantifizierte Tatsache, z.B. " +
       "'2 Gewässer im 50-m-Umfeld, davon eine Qürung' oder " +
       "'Vorhaben liegt vollständig im Freiraum'. Die Zahlen stammen aus queryLayer. " +
+      "Was hier nicht steht, kann im Bericht nicht vorkommen: Zahlen, die in deinen " +
+      "Stichpunkten fehlen, werden im formulierten Text zurückgewiesen. " +
       "KEINE Aussage zur Raumverträglichkeit oder Zulässigkeit.",
     resultMode: "continue",
     inputSchema: await createSchema({
@@ -1771,12 +2009,90 @@ async function makeFasseZusammen() {
         required: true,
       },
     }),
-    execute: ({ kernaussagen }) => {
-      setzeKernaussagen(kernaussagen);
+    execute: async ({ kernaussagen }) => {
+      const fakten = (kernaussagen ?? []).filter(Boolean);
       const a = getAnalyse();
-      return { geschrieben: (kernaussagen ?? []).length, relevanteKategorien: a.relevanz.length };
+      if (!fakten.length) {
+        setzeKernaussagen([]);
+        return { geschrieben: 0, relevanteKategorien: a.relevanz.length };
+      }
+
+      // Formuliert wird vom BerichtAgent, nicht hier. Was das Modell uebergibt,
+      // sind die FAKTEN - der Subagent macht daraus die Saetze.
+      const b = await formuliereBericht(fakten.join("\n"));
+      if (!b.ok) {
+        console.warn("[tools] Bericht-Agent ausgefallen, Kernaussagen bleiben unveraendert.");
+        setzeKernaussagen(fakten);
+        return {
+          geschrieben: fakten.length,
+          relevanteKategorien: a.relevanz.length,
+          hinweis: "Der Bericht-Agent war nicht erreichbar; deine Kernaussagen stehen unverändert.",
+        };
+      }
+
+      const erfunden = unbelegteZahlen(b.text, fakten.join(" "));
+      if (erfunden.length) {
+        console.warn(
+          "[tools] Bericht-Agent nennt Zahlen, die nicht in den Fakten stehen - Text verworfen:",
+          erfunden.join(", "),
+        );
+        setzeKernaussagen(fakten);
+        return {
+          geschrieben: fakten.length,
+          relevanteKategorien: a.relevanz.length,
+          hinweis:
+            `Der formulierte Text enthielt nicht belegte Zahlen (${erfunden.join(", ")}) und ` +
+            "wurde verworfen; deine Kernaussagen stehen unverändert.",
+        };
+      }
+
+      const saetze = inSaetze(b.text);
+      setzeKernaussagen(saetze.length ? saetze : fakten);
+      return {
+        geschrieben: saetze.length,
+        relevanteKategorien: a.relevanz.length,
+        text: b.text,
+      };
     },
   });
+}
+
+/**
+ * Zahlen im Text, die in den Fakten nicht vorkommen.
+ *
+ * Der BerichtAgent darf formulieren, aber nicht rechnen - sein Prompt sagt das,
+ * und ein Prompt ist hier kein Verlass. Also wird es geprueft: jede
+ * Ziffernfolge im Text muss in den Fakten stehen.
+ *
+ * Verglichen wird die ZIFFERNFOLGE ohne Trennzeichen - "3.000" und "3000"
+ * gelten als dieselbe Zahl, ebenso "1,73" und "1.73". Das ist eine bewusste
+ * Entscheidung gegen das Interpretieren der Trennzeichen: ein Punkt kann im
+ * Deutschen Tausender trennen und im Englischen Dezimalstellen, und daran die
+ * Pruefung scheitern zu lassen hiesse, einen inhaltlich richtigen Bericht
+ * wegen seiner Schreibweise zu verwerfen - der teurere Fehler.
+ *
+ * WAS DAMIT NICHT ERKANNT WIRD: ein verrutschtes Dezimaltrennzeichen. Schreibt
+ * der Agent "173 km" statt "1,73 km", ist die Ziffernfolge dieselbe und die
+ * Pruefung schweigt. Das ist die bekannte Luecke; erkannt werden erfundene,
+ * gerundete und nachgerechnete Zahlen.
+ *
+ * Rundet der Agent 277 auf "rund 280", fliegt der Text heraus. Das ist
+ * gewollt: eine gerundete Zahl in einem Screening-Bericht ist eine andere
+ * Aussage als die gemessene.
+ */
+function unbelegteZahlen(text, fakten) {
+  const ziehen = (s) =>
+    (String(s).match(/\d[\d.,]*/g) ?? []).map((z) => z.replace(/[.,]/g, ""));
+  const belegt = new Set(ziehen(fakten));
+  return [...new Set(ziehen(text).filter((z) => z && !belegt.has(z)))];
+}
+
+/** Zerlegt den Bericht in Sätze - der PDF-Export listet sie einzeln auf. */
+function inSaetze(text) {
+  return String(text)
+    .split(/(?<=[.!?])\s+/)
+    .map((z) => z.trim())
+    .filter((z) => z.length > 2);
 }
 
 /**
@@ -1816,18 +2132,31 @@ export function offeneLayer() {
 }
 
 /**
- * Werkzeuge des Haupt-Agenten. Die RAG-Recherche läuft über die Subagenten
- * (subagenten.js) - deren Passagen sollen den Hauptkontext nicht fluten.
+ * Werkzeuge des Haupt-Agenten.
+ *
+ * Er führt die Fäden zusammen und ruft auf; die fachliche Arbeit liegt bei den
+ * Subagenten (subagenten.js). Entsprechend fehlen hier bewusst drei Werkzeuge,
+ * die er früher selbst hatte:
+ *
+ * - `beschreibeLayer` und `queryLayer` gehören jetzt dem LayerAgent hinter
+ *   `pruefeKategorie`. Ihre Antworten - Feldlisten, Domänencodes, Messwerte -
+ *   blieben sonst in der Nachrichtenhistorie des Hauptagenten und gingen bei
+ *   JEDER weiteren Modellrunde erneut mit.
+ * - `schreibeBericht` ist entfallen, `fasseZusammen` läuft selbst durch den
+ *   BerichtAgent (bericht.js).
+ *
+ * Warum sie nicht einfach zusätzlich hier stehen: Genau das war der Fehler
+ * beim Abschlusstext. Es gab zwei Wege, einen über den Subagenten und einen
+ * daran vorbei, und das Modell nahm den zweiten. Zwei Wege zum selben Ziel
+ * sind keine Redundanz, sondern eine Einladung.
  */
 export async function baueTools() {
   return mitFortschritt(
     await Promise.all([
       makeHoleVorhabenKontext(),
       makeBestimmeRegion(),
-      makeBeschreibeLayer(),
       makeMeldeRelevanz(),
       makeMeldeNichtRelevant(),
-      makeQueryLayer(),
       makeFasseZusammen(),
     ]),
   );

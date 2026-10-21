@@ -174,13 +174,15 @@ export function erzeugePdf(meta = {}) {
   }
 
   // --- Fundstellen ---
+  const anker = alleFundstellen("anker:");
   const rp = alleFundstellen("regionalplan:");
   const ges = alleFundstellen("gesetz:");
-  if (rp.length || ges.length) {
+  if (anker.length || rp.length || ges.length) {
     doc.addPage();
     y = R;
     zeile("Herangezogene Fundstellen", { size: 14, style: "bold", gap: 8 });
     for (const [titel, liste] of [
+      ["Tatbestandsnormen der Belange (gezielt geholt)", anker],
       ["Regionalplan", rp],
       ["Gesetzeskorpus", ges],
     ]) {

@@ -533,8 +533,15 @@ function aktualisiereButtons() {
  * erfolgreich, das Ergebnis blieb leer, und die Nachfass-Schritte schickten
  * weitere Nachrichten in dasselbe Limit.
  */
+// Dieselbe Haertung wie in agentlauf.js, und hier war sie noch wichtiger:
+// `fehlertext()` faellt ohne `error` auf `antwort.text` zurueck, also auf
+// die VOLLE Antwort des Hauptagenten. Enthielt dessen Zusammenfassung
+// irgendwo eine Zahl wie "429 Objekte" oder "1.429", galt der ganze Lauf
+// als Dienstabweisung - mit 10, 30 und 60 Sekunden Warten und Abbruch
+// danach. Im Lauf vom 2026-10-11 ist das nur nicht eingetreten, weil in
+// der Zusammenfassung zufaellig keine solche Zahl stand.
 const DIENST_FEHLER =
-  /\b429\b|too many requests|rate.?limit|high demand|error during (message processing|intent detection)/i;
+  /too many requests|rate.?limit|high demand|exceeds the maximum usage size|error during (?:message processing|intent detection)|(?:http|statuscode|status(?:\s*code)?|code|error|fehler)\D{0,10}429\b/i;
 
 /**
  * Wartezeiten vor den Wiederholungen. Ein Kapazitätsengpass des Esri-Dienstes
