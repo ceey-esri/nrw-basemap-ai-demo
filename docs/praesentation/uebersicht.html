@@ -1,0 +1,645 @@
+<title>Wer macht wann was</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --bg: #eceef1; --flaeche: #ffffff; --flaeche-2: #f5f6f8;
+    --ink: #22272e; --leise: #5b636e; --linie: #dcdfe4;
+    --akzent: #2b4c7e; --akzent-weich: #e9eef5;
+    --ki: #9a6410; --ki-weich: #fbf0dd;
+    --rag: #5b4a91; --rag-weich: #eeebf7;
+    --sans: "Nunito Sans", "Avenir Next", -apple-system, "Segoe UI", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171b21; --flaeche: #1e242c; --flaeche-2: #232a33;
+      --ink: #e6e9ee; --leise: #9aa4b2; --linie: #333c47;
+      --akzent: #7ea6dd; --akzent-weich: #1c2836;
+      --ki: #e0a94a; --ki-weich: #322715;
+      --rag: #a893e0; --rag-weich: #251f38;
+    }
+    .m-ha { color: #e09a4a; background: #3a2a12; }
+    .m-sdk { color: #78b0e8; background: #152a3e; }
+    .m-erg { color: #6fc8ae; background: #13302a; }
+    .m-dok { color: #d8b878; background: #332714; }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171b21; --flaeche: #1e242c; --flaeche-2: #232a33;
+    --ink: #e6e9ee; --leise: #9aa4b2; --linie: #333c47;
+    --akzent: #7ea6dd; --akzent-weich: #1c2836;
+    --ki: #e0a94a; --ki-weich: #322715;
+    --rag: #a893e0; --rag-weich: #251f38;
+  }
+  :root[data-theme="dark"] .m-ha { color: #e09a4a; background: #3a2a12; }
+  :root[data-theme="dark"] .m-sdk { color: #78b0e8; background: #152a3e; }
+  :root[data-theme="dark"] .m-dok { color: #d8b878; background: #332714; }
+
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .huelle { max-width: 1300px; margin: 0 auto; padding: 0 24px 90px; }
+
+  header { display: grid; gap: 12px; padding: 54px 0 30px; border-bottom: 2px solid var(--akzent); }
+  .kennung { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--leise); }
+  h1 { margin: 0; font-size: clamp(30px, 4.6vw, 44px); font-weight: 800; letter-spacing: -0.028em; line-height: 1.06; }
+  .lead { margin: 0; max-width: 62ch; font-size: 17px; color: var(--leise); }
+
+  section { padding-top: 46px; }
+  h2 { margin: 0 0 10px; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+  h2 .nr { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--akzent); margin-right: 10px; }
+  p { max-width: 68ch; margin: 0 0 14px; }
+  .unter { max-width: 68ch; margin: 0 0 20px; color: var(--leise); }
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--flaeche-2); border: 1px solid var(--linie); border-radius: 4px; padding: 0.06em 0.34em; }
+
+  .marke { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .marke::before { content: ""; width: 6px; height: 6px; border-radius: 2px; background: currentColor; }
+  .m-code { color: var(--akzent); background: var(--akzent-weich); }
+  .m-ki { color: var(--ki); background: var(--ki-weich); }
+  .m-rag { color: var(--rag); background: var(--rag-weich); }
+  .m-ha { color: #b8700f; background: #fae7cd; }
+  .m-sdk { color: #1f6fb8; background: #e2edf8; }
+  .m-erg { color: #1f7a63; background: #dff2ec; }
+  .m-dok { color: #7a5c20; background: #f5ecd8; }
+  .legende { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
+
+  /* Die Tafel ist breit und soll lieber scrollen als unleserlich schrumpfen. */
+  .tafel { overflow-x: auto; margin: 24px 0 8px; }
+  .tafel svg { display: block; width: 100%; min-width: 1460px; height: auto; color: var(--ink); }
+  figcaption { margin-top: 14px; font-size: 13.5px; color: var(--leise); max-width: 72ch; }
+
+  .tab { overflow-x: auto; margin: 18px 0; border: 1px solid var(--linie); border-radius: 10px; background: var(--flaeche); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 10px 14px; vertical-align: top; border-bottom: 1px solid var(--linie); }
+  thead th { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--leise); background: var(--flaeche-2); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.k { font-family: var(--mono); font-size: 12px; }
+  td .neben { display: block; color: var(--leise); font-size: 12.5px; margin-top: 3px; }
+
+  .merk { margin: 24px 0; padding: 18px 22px; background: var(--flaeche); border: 1px solid var(--linie); border-left: 4px solid var(--akzent); border-radius: 0 10px 10px 0; }
+  .merk p { margin: 0; max-width: none; }
+  .merk p + p { margin-top: 10px; }
+  .merk.warn { border-left-color: var(--ki); }
+
+  ul { max-width: 70ch; }
+  li { margin-bottom: 9px; }
+
+  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--linie); color: var(--leise); font-size: 13px; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  @media (max-width: 620px) { .huelle { padding: 0 14px 70px; } }
+</style>
+
+<div class="huelle">
+
+<header>
+  <div class="kennung">Technische Übersicht · Stand 11.10.2026</div>
+  <h1>Wer macht wann was</h1>
+  <p class="lead">
+    In der Mitte der Hauptagent, von dem jeder Aufruf ausgeht. Links die
+    Funktionen und ihre SDK-Aufrufe, rechts die fünf Subagenten, dann das
+    RAG-Backend und ganz rechts der Weg der Original-PDFs über Ollama in die
+    ChromaDB. Jeder Pfeil trägt, was übergeben wird — und was zurückkommt.
+  </p>
+</header>
+
+<section id="besetzung">
+  <h2><span class="nr">01</span>Die Besetzung</h2>
+  <p class="unter">
+    Ein Hauptagent, fünf Subagenten, dazu Code, der nicht verhandelt. Der
+    Hauptagent arbeitet nicht selbst — er entscheidet, welches Werkzeug mit
+    welchen Argumenten aufgerufen wird. Er hat dafür <strong>genau fünf
+    Werkzeuge</strong>; alles andere gehört einem Subagenten.
+  </p>
+
+  <div class="legende">
+    <span class="marke m-code">Funktion · fester Code</span>
+    <span class="marke m-ha">Hauptagent</span>
+    <span class="marke m-ki">Subagent · Sprachmodell</span>
+    <span class="marke m-sdk">Maps SDK · Operator / Abfrage</span>
+    <span class="marke m-rag">RAG · Ollama · ChromaDB</span>
+    <span class="marke m-dok">Original-PDF</span>
+    <span class="marke m-erg">Ergebnis</span>
+  </div>
+
+  <div class="tab">
+    <table>
+      <thead><tr><th>Wer</th><th>Aufgerufen über</th><th>Aufgabe</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="k">ScreeningAgent <span class="marke m-ha">Hauptagent</span></td>
+          <td>—</td>
+          <td>Orchestriert. Hängt an einer unsichtbaren <code>&lt;arcgis-assistant&gt;</code>, gesteuert nur über <code>submitMessage()</code></td>
+        </tr>
+        <tr><td class="k">BelangeAgent <span class="marke m-ki">KI</span></td><td class="k">klaereBelange</td><td>Liest nach, welche Belange zu prüfen sind — § 35 Abs. 3 BauGB plus je Kategorie die Ankernorm<span class="neben">Vollständigkeit wird im Code gegen alle acht Kategorie-IDs geprüft</span></td></tr>
+        <tr><td class="k">RegionalplanAgent <span class="marke m-ki">KI</span></td><td class="k">recherchiere</td><td>Ziele und Grundsätze des geltenden Plans — einer von sieben</td></tr>
+        <tr><td class="k">GesetzAgent <span class="marke m-ki">KI</span></td><td class="k">recherchiere</td><td>Einschlägige Normen im Gesetzeskorpus, parallel zum Regionalplan-Agenten</td></tr>
+        <tr><td class="k">LayerAgent <span class="marke m-ki">KI</span></td><td class="k">pruefeKategorie</td><td>Sucht je Kategorie die passenden Layer, prüft ihre Felder, fragt ab und verschneidet<span class="neben">Der einzige Subagent mit eigenen Werkzeugen: <code>beschreibeLayer</code> und <code>queryLayer</code></span></td></tr>
+        <tr><td class="k">BerichtAgent <span class="marke m-ki">KI</span></td><td class="k">fasseZusammen</td><td>Formuliert den Abschlusstext. Hat keine Werkzeuge — er kann nichts nachschlagen und nichts rechnen<span class="neben">Jede Ziffernfolge im Text wird gegen die übergebenen Fakten geprüft</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="merk warn">
+    <p>
+      <strong>Die Werkzeugnamen in der Tafel sind echte Funktionen</strong> —
+      <code>createFunctionTool</code>-Objekte in <code>tools.js</code> und
+      <code>subagenten.js</code>. Der Modellanteil liegt in der Entscheidung,
+      <em>welches</em> Werkzeug mit <em>welchen Argumenten</em> aufgerufen wird;
+      der Rumpf ist danach Code. <code>meldeRelevanz</code> etwa ist eine
+      Modellentscheidung über Kategorie und Radius — die Funktion selbst zieht
+      einen geodätischen Puffer, prüft die Radiuszahl gegen die Passagen und
+      schreibt in den Ergebnisspeicher.
+    </p>
+    <p>
+      <strong>Zu jedem Ziel führt genau EIN Weg</strong>, und das ist keine
+      Ästhetik. Der Abschlusstext hatte zwei: <code>schreibeBericht</code> ließ
+      den Subagenten formulieren und gab den Text zurück mit der Anweisung, ihn
+      unverändert an <code>fasseZusammen</code> weiterzugeben. Im Lauf vom
+      11.10. hat das Modell den ersten Schritt übersprungen — der Bericht kam
+      vom Hauptagenten. <code>schreibeBericht</code> ist deshalb entfallen, und
+      <code>fasseZusammen</code> läuft selbst durch den Subagenten. Dieselbe
+      Lehre beim LayerAgent: <code>beschreibeLayer</code> und
+      <code>queryLayer</code> sind aus den Werkzeugen des Hauptagenten
+      <em>entfernt</em>, nicht nur im Prompt abgeraten.
+    </p>
+  </div>
+</section>
+
+<section id="tafel">
+  <h2><span class="nr">02</span>Der Ablauf</h2>
+  <p class="unter">
+    Der Hauptagent ist die durchgehende Säule in der Mitte. Er ruft auf, bekommt
+    zurück, ruft das Nächste auf — von oben nach unten gelesen ist das der
+    zeitliche Ablauf. Rechts außen steht, woher das Wissen kommt: die amtlichen
+    Original-PDFs, einmal zerlegt und über Ollama in die ChromaDB gelegt.
+  </p>
+
+  <figure class="tafel">
+    <svg viewBox="0 0 1648 1110" role="img"
+         aria-label="Der Hauptagent als Säule in der Mitte. Links die Funktionen mit ihren Maps-SDK-Aufrufen, rechts vier Werkzeuge mit je einem Subagenten, daneben die sieben Suchschritte des RAG-Backends und rechts der Korpus aus Original-PDFs über Chunking und Ollama in die ChromaDB.">
+      <defs>
+        <marker id="pfo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#b8700f"/></marker>
+        <marker id="pfg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#2b6e4f"/></marker>
+        <marker id="pfa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#c98a1e"/></marker>
+        <marker id="pfl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#7a66b8"/></marker>
+        <marker id="pfs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#1f6fb8"/></marker>
+        <marker id="pfd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#8a6d3b"/></marker>
+      </defs>
+            <text x="79" y="20" font-family="monospace" font-size="10" fill="#1f6fb8" font-weight="600" text-anchor="middle">MAPS SDK</text>
+      <text x="79" y="32" font-family="sans-serif" font-size="8" fill="#1f6fb8" fill-opacity="0.8" text-anchor="middle">Operator / Abfrage</text>
+      <text x="256" y="26" font-family="monospace" font-size="10" fill="currentColor" fill-opacity="0.6" text-anchor="middle">FUNKTIONEN · fester Code</text>
+      <text x="927" y="20" font-family="monospace" font-size="10" fill="#c98a1e" font-weight="600" text-anchor="middle">WERKZEUG &#8594; SUBAGENT</text>
+      <text x="1200" y="20" font-family="monospace" font-size="10" fill="#7a66b8" font-weight="600" text-anchor="middle">RAG · JE ANFRAGE</text>
+      <text x="1532" y="20" font-family="monospace" font-size="10" fill="#8a6d3b" font-weight="600" text-anchor="middle">KORPUS · EINMAL AUFGEBAUT</text>
+      <line x1="16" y1="40" x2="1632" y2="40" stroke="currentColor" stroke-opacity="0.2"/>
+      <rect x="486" y="54" width="186" height="1000" rx="6" fill="#b8700f" fill-opacity="0.12" stroke="#b8700f" stroke-opacity="1" stroke-width="2"/>
+      <text x="579" y="80" font-family="sans-serif" font-size="13.5" fill="currentColor" font-weight="800" text-anchor="middle">ScreeningAgent</text>
+      <text x="579" y="97" font-family="monospace" font-size="9.5" fill="#b8700f" font-weight="600" text-anchor="middle">orchestriert</text>
+      <line x1="500" y1="108" x2="658" y2="108" stroke="#b8700f" stroke-opacity="0.4"/>
+      <text x="500" y="128" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.8">Er entscheidet:</text>
+      <text x="500" y="144" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">· Reihenfolge der Aufrufe</text>
+      <text x="500" y="160" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">· welche Kategorien geprüft,</text>
+      <text x="500" y="176" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">&#160;&#160;welche verworfen werden</text>
+      <text x="500" y="192" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">· welcher Radius gemeldet wird</text>
+      <text x="500" y="208" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">· wann er nachfasst</text>
+      <line x1="500" y1="238" x2="658" y2="238" stroke="#b8700f" stroke-opacity="0.4"/>
+      <text x="500" y="258" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">Fünf Werkzeuge, mehr</text>
+      <text x="500" y="273" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">nicht. Er sucht keine</text>
+      <text x="500" y="288" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">Layer, misst nichts,</text>
+      <text x="500" y="303" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">liest keine Karte und</text>
+      <text x="500" y="318" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">formuliert den Bericht</text>
+      <text x="500" y="333" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">nicht selbst.</text>
+      <text x="579" y="1040" font-family="monospace" font-size="9" fill="currentColor" fill-opacity="0.55" text-anchor="middle">&lt;arcgis-assistant&gt;, off-screen</text>
+      <rect x="156" y="60" width="200" height="50" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="170" y="82" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">holeVorhabenKontext</text>
+      <text x="170" y="100" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">tools.js</text>
+      <line x1="476" y1="76" x2="366" y2="76" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="366" y1="106" x2="476" y2="106" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="421" y="70" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">&#8212;</text>
+      <text x="421" y="120" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">Vorhabenart, Maße</text>
+      <rect x="156" y="150" width="200" height="50" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="170" y="172" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">bestimmeRegion</text>
+      <text x="170" y="190" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">regionen.js · tools.js</text>
+      <rect x="16" y="148" width="126" height="41" rx="6" fill="#1f6fb8" fill-opacity="0.12" stroke="#1f6fb8" stroke-opacity="1" stroke-width="1.4"/>
+      <text x="26" y="168" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">layer.queryFeatures()</text>
+      <text x="26" y="179" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">Abfrage am Dienst</text>
+      <line x1="156" y1="168" x2="146" y2="168" stroke="#1f6fb8" stroke-width="1.3" marker-end="url(#pfs)"/>
+      <line x1="476" y1="166" x2="366" y2="166" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="366" y1="196" x2="476" y2="196" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="421" y="160" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Vorhabengeometrie</text>
+      <text x="421" y="210" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">Planungsregion + Plan</text>
+      <rect x="156" y="560" width="200" height="50" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="170" y="582" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">meldeRelevanz</text>
+      <text x="170" y="600" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">radiusBelegt() · tools.js</text>
+      <rect x="16" y="552" width="126" height="68" rx="6" fill="#1f6fb8" fill-opacity="0.12" stroke="#1f6fb8" stroke-opacity="1" stroke-width="1.4"/>
+      <text x="26" y="572" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">geodesicBufferOperator</text>
+      <text x="26" y="583" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <text x="26" y="599" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">geodeticAreaOperator</text>
+      <text x="26" y="610" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <line x1="156" y1="586" x2="146" y2="586" stroke="#1f6fb8" stroke-width="1.3" marker-end="url(#pfs)"/>
+      <line x1="476" y1="576" x2="366" y2="576" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="366" y1="606" x2="476" y2="606" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="421" y="570" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Kategorie + Radius</text>
+      <text x="421" y="620" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">Zone + Beleg ja/nein</text>
+      <rect x="156" y="660" width="200" height="50" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="170" y="682" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">meldeNichtRelevant</text>
+      <text x="170" y="700" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">tools.js</text>
+      <line x1="476" y1="676" x2="366" y2="676" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="366" y1="706" x2="476" y2="706" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="421" y="670" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Begründung + Fundstelle</text>
+      <text x="421" y="720" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">vermerkt</text>
+      <rect x="156" y="1020" width="200" height="70" rx="6" fill="#1f7a63" fill-opacity="0.12" stroke="#1f7a63" stroke-opacity="1" stroke-width="2"/>
+      <text x="170" y="1044" font-family="sans-serif" font-size="13" fill="currentColor" font-weight="800">Panel + Karte</text>
+      <text x="170" y="1061" font-family="monospace" font-size="9.5" fill="#1f7a63" font-weight="700">ERGEBNIS</text>
+      <text x="170" y="1078" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.65">analyse.js · karte.js</text>
+      <rect x="16" y="1018" width="126" height="68" rx="6" fill="#1f6fb8" fill-opacity="0.12" stroke="#1f6fb8" stroke-opacity="1" stroke-width="1.4"/>
+      <text x="26" y="1038" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">FeatureFilter.objectIds</text>
+      <text x="26" y="1049" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <text x="26" y="1065" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">view.goTo()</text>
+      <text x="26" y="1076" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <line x1="156" y1="1052" x2="146" y2="1052" stroke="#1f6fb8" stroke-width="1.3" marker-end="url(#pfs)"/>
+      <path d="M 256 980 L 256 1016" fill="none" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="268" y="1004" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600">Objekte auf ObjectIDs gefiltert</text>
+      <rect x="802" y="140" width="250" height="48" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="816" y="162" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">klaereBelange</text>
+      <text x="816" y="180" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">subagenten.js</text>
+      <line x1="682" y1="156" x2="792" y2="156" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="792" y1="186" x2="682" y2="186" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="737" y="150" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Vorhaben + Katalog</text>
+      <text x="737" y="200" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">BELEGT · NICHT BERÜHRT</text>
+      <text x="737" y="212" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">OFFEN, je Kategorie</text>
+      <rect x="802" y="198" width="250" height="64" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="220" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">BelangeAgent</text>
+      <text x="816" y="237" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">§ 35 Abs. 3 BauGB + 8 Ankernormen</text>
+      <text x="816" y="250" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">Vollständigkeit im Code geprüft</text>
+      <line x1="927" y1="190" x2="927" y2="195" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <rect x="802" y="300" width="250" height="48" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="816" y="322" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">recherchiere</text>
+      <text x="816" y="340" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">subagenten.js · Promise.all</text>
+      <line x1="682" y1="316" x2="792" y2="316" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="792" y1="346" x2="682" y2="346" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="737" y="310" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">kategorieId + Vorhaben</text>
+      <text x="737" y="360" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">RELEVANT · ZITAT</text>
+      <text x="737" y="372" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">KERN · RADIUS</text>
+      <rect x="802" y="358" width="250" height="38" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="380" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">RegionalplanAgent</text>
+      <line x1="927" y1="350" x2="927" y2="355" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <rect x="802" y="402" width="250" height="38" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="424" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">GesetzAgent</text>
+      <line x1="927" y1="394" x2="927" y2="399" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <text x="816" y="456" font-family="monospace" font-size="9.3" fill="currentColor" fill-opacity="0.65">parallel · je eigener thread_id</text>
+      <rect x="802" y="560" width="250" height="48" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="816" y="582" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">pruefeKategorie</text>
+      <text x="816" y="600" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">subagenten.js</text>
+      <line x1="682" y1="576" x2="792" y2="576" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="792" y1="606" x2="682" y2="606" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="737" y="570" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">kategorieId</text>
+      <text x="737" y="620" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">je Layer Anzahl + Maß</text>
+      <rect x="802" y="654" width="250" height="236" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="676" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">LayerAgent</text>
+      <text x="816" y="693" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">eigene Werkzeuge, recursionLimit 40</text>
+      <line x1="927" y1="646" x2="927" y2="651" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <text x="816" y="712" font-family="monospace" font-size="10.5" fill="currentColor" font-weight="700">beschreibeLayer</text>
+      <text x="816" y="728" font-family="monospace" font-size="10.5" fill="currentColor" font-weight="700">queryLayer</text>
+      <rect x="910" y="748" width="134" height="122" rx="6" fill="#1f6fb8" fill-opacity="0.12" stroke="#1f6fb8" stroke-opacity="1" stroke-width="1.4"/>
+      <text x="920" y="768" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">queryFeatureCount()</text>
+      <text x="920" y="779" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">Abfrage am Dienst</text>
+      <text x="920" y="795" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">layer.queryFeatures()</text>
+      <text x="920" y="806" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">Abfrage am Dienst</text>
+      <text x="920" y="822" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">intersectionOperator</text>
+      <text x="920" y="833" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <text x="920" y="849" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">geodeticArea/Length</text>
+      <text x="920" y="860" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <line x1="902" y1="768" x2="906" y2="768" stroke="#1f6fb8" stroke-width="1.3" marker-end="url(#pfs)"/>
+      <rect x="802" y="920" width="250" height="48" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="816" y="942" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">fasseZusammen</text>
+      <text x="816" y="960" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">tools.js &#8594; bericht.js</text>
+      <line x1="682" y1="936" x2="792" y2="936" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="792" y1="966" x2="682" y2="966" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="737" y="930" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Befunde als Fakten</text>
+      <text x="737" y="980" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">3 bis 6 Sätze</text>
+      <rect x="802" y="998" width="250" height="64" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="1020" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">BerichtAgent</text>
+      <text x="816" y="1037" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">keine Werkzeuge</text>
+      <text x="816" y="1050" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">Zahlen gegen die Fakten geprüft</text>
+      <line x1="927" y1="990" x2="927" y2="995" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <rect x="1100" y="54" width="200" height="482" rx="6" fill="#7a66b8" fill-opacity="0.12" stroke="#7a66b8" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1200" y="76" font-family="sans-serif" font-size="10.5" fill="currentColor" font-weight="700" text-anchor="middle">retrieval-only</text>
+      <text x="1200" y="90" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7" text-anchor="middle">Python · FastAPI · Port 8000</text>
+      <text x="1200" y="102" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7" text-anchor="middle">KEIN Modell, das Text erzeugt</text>
+      <text x="1200" y="116" font-family="sans-serif" font-size="8.2" fill="#7a66b8" font-weight="600" text-anchor="middle">angefragt von 3 Subagenten</text>
+      <rect x="1112" y="126" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="141" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">1 Suchtext bauen</text>
+      <text x="1122" y="155" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">wirkungsfrage() — Belang zuerst</text>
+      <rect x="1112" y="178" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="193" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">2 Frage &#8594; Vektor</text>
+      <text x="1122" y="207" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">ruft Ollama</text>
+      <line x1="1200" y1="168" x2="1200" y2="174" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="230" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="245" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">3 Vektorsuche</text>
+      <text x="1122" y="259" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">liest ChromaDB · 40 Kandidaten</text>
+      <line x1="1200" y1="220" x2="1200" y2="226" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="282" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="297" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">4 Stichwortsuche</text>
+      <text x="1122" y="311" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">BM25 im Prozess · 40 Kandidaten</text>
+      <line x1="1200" y1="272" x2="1200" y2="278" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="334" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="349" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">5 Fusion</text>
+      <text x="1122" y="363" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">Reciprocal Rank Fusion, k=60</text>
+      <line x1="1200" y1="324" x2="1200" y2="330" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="386" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="401" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">6 Abstinenzschwelle</text>
+      <text x="1122" y="415" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">unter 0,45 &#8594; leere Liste</text>
+      <line x1="1200" y1="376" x2="1200" y2="382" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="438" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="453" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">7 Dubletten raus</text>
+      <text x="1122" y="467" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">je Fundstelle ein Chunk</text>
+      <line x1="1200" y1="428" x2="1200" y2="434" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <text x="1200" y="520" font-family="sans-serif" font-size="9.5" fill="#7a66b8" font-weight="700" text-anchor="middle">&#8594; Passagen im Wortlaut</text>
+      <line x1="1056" y1="225" x2="1070" y2="225" stroke="#7a66b8" stroke-width="1.2" stroke-opacity="0.75"/>
+      <line x1="1056" y1="377" x2="1070" y2="377" stroke="#7a66b8" stroke-width="1.2" stroke-opacity="0.75"/>
+      <line x1="1056" y1="421" x2="1070" y2="421" stroke="#7a66b8" stroke-width="1.2" stroke-opacity="0.75"/>
+      <line x1="1070" y1="421" x2="1070" y2="92" stroke="#7a66b8" stroke-width="1.2" stroke-opacity="0.75"/>
+      <line x1="1070" y1="92" x2="1096" y2="92" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1432" y="54" width="200" height="92" rx="6" fill="#8a6d3b" fill-opacity="0.12" stroke="#8a6d3b" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="74" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">Original-PDF</text>
+      <text x="1446" y="90" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">Rechtsgrundlagen/  21 PDF · 12 MB</text>
+      <text x="1446" y="103" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">Regionalplaene/    28 PDF · 481 MB</text>
+      <text x="1446" y="116" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">amtliche Dokumente, unverändert</text>
+      <text x="1446" y="129" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">7 Planungsregionen, 21 Gesetze</text>
+      <line x1="1532" y1="150" x2="1532" y2="174" stroke="#8a6d3b" stroke-width="1.4" marker-end="url(#pfd)"/>
+      <text x="1540" y="166" font-family="sans-serif" font-size="8.6" fill="#8a6d3b" font-weight="600">Ingest, einmal</text>
+      <rect x="1432" y="178" width="200" height="76" rx="6" fill="#8a6d3b" fill-opacity="0.12" stroke="#8a6d3b" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="198" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">Chunking</text>
+      <text x="1446" y="214" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">ingest.py · ingest_rp.py</text>
+      <text x="1446" y="227" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">§-Marker bzw. Ziel-Nummer,</text>
+      <text x="1446" y="240" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">sonst seitenweise</text>
+      <text x="1446" y="253" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">&#8594; 5.801 Chunks</text>
+      <line x1="1532" y1="258" x2="1532" y2="282" stroke="#8a6d3b" stroke-width="1.4" marker-end="url(#pfd)"/>
+      <rect x="1432" y="286" width="200" height="78" rx="6" fill="#7a66b8" fill-opacity="0.12" stroke="#7a66b8" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="306" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">Ollama</text>
+      <text x="1446" y="320" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">embeddinggemma · Port 11434</text>
+      <text x="1446" y="333" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.78">übersetzt Text in Zahlen —</text>
+      <text x="1446" y="346" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.78" font-weight="700">erzeugt KEINEN Text</text>
+      <text x="1446" y="359" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.6">lru_cache auf die Frage</text>
+      <line x1="1532" y1="368" x2="1532" y2="392" stroke="#8a6d3b" stroke-width="1.4" marker-end="url(#pfd)"/>
+      <text x="1540" y="384" font-family="sans-serif" font-size="8.6" fill="#8a6d3b" font-weight="600">Vektor je Chunk</text>
+      <rect x="1432" y="396" width="200" height="88" rx="6" fill="#7a66b8" fill-opacity="0.12" stroke="#7a66b8" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="416" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">ChromaDB</text>
+      <text x="1446" y="430" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">rag/chroma_db · auf Platte</text>
+      <text x="1446" y="445" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">rechtsgrundlagen  4.407</text>
+      <text x="1446" y="458" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">regionalplaene    1.394</text>
+      <text x="1446" y="472" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.6">Vektor + Metadaten je Chunk</text>
+      <path d="M 1292 197 L 1330 197 L 1330 325 L 1428 325" fill="none" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <text x="1422" y="318" font-family="sans-serif" font-size="8.4" fill="#7a66b8" font-weight="600" text-anchor="end">Frage einbetten</text>
+      <path d="M 1292 249 L 1350 249 L 1350 430 L 1428 430" fill="none" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <text x="1422" y="423" font-family="sans-serif" font-size="8.4" fill="#7a66b8" font-weight="600" text-anchor="end">Vektorsuche</text>
+      <path d="M 1292 301 L 1370 301 L 1370 455 L 1428 455" fill="none" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <text x="1422" y="448" font-family="sans-serif" font-size="8.4" fill="#7a66b8" font-weight="600" text-anchor="end">Volltext für BM25</text>
+      <line x1="1532" y1="488" x2="1532" y2="506" stroke="#2b6e4f" stroke-width="1.3" marker-end="url(#pfg)"/>
+      <rect x="1432" y="510" width="200" height="74" rx="6" fill="#2b6e4f" fill-opacity="0.12" stroke="#2b6e4f" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="530" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">Ankernorm</text>
+      <text x="1446" y="544" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">col.get(where={kuerzel,norm})</text>
+      <text x="1446" y="558" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.78" font-weight="700">GEHOLT, nicht gesucht:</text>
+      <text x="1446" y="571" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.78">kein Embedding, kein Rang</text>
+      <path d="M 1428 556 L 1082 556 L 1082 245 L 1056 245" fill="none" stroke="#2b6e4f" stroke-width="1.2" marker-end="url(#pfg)"/>
+      <text x="1200" y="549" font-family="sans-serif" font-size="8.4" fill="#2b6e4f" font-weight="600" text-anchor="middle">§ 39 LFoG NRW für &#8222;wald&#8220; — geht mit der Antwort zurück</text>
+    </svg>
+    <figcaption>
+      <strong>Jeder orange Pfeil geht vom Hauptagenten aus</strong> — hinaus mit
+      dem, was er übergibt, grün zurück mit dem, was er bekommt. Links seine
+      vier Code-Funktionen, ganz links <strong>blau die Maps-SDK-Aufrufe</strong>
+      mit dem Ort: <em>lokal im Browser</em> für die Geometrie-Operatoren,
+      <em>Abfrage am Dienst</em> für die Layerabfragen. Rechts die vier
+      Werkzeuge, hinter denen je ein Subagent steckt — der
+      <strong>LayerAgent</strong> hat als einziger selbst Werkzeuge und damit
+      auch eigene SDK-Aufrufe. Daneben lila die sieben Schritte, die jede Suche
+      durchläuft, und rechts der Weg der <strong>Original-PDFs</strong> über das
+      Chunking und <strong>Ollama</strong> in die <strong>ChromaDB</strong>.
+      Grün abgesetzt die Ankernorm: sie wird nicht gesucht, sondern über ihre
+      Fundstelle geholt.
+    </figcaption>
+  </figure>
+
+  <h2 id="rag">Was Ollama und ChromaDB dabei tun — und was nicht</h2>
+
+  <p>
+    Beide stehen im Schaubild rechts, und beide werden regelmäßig für mehr
+    gehalten, als sie sind. <strong>Keines von beiden denkt.</strong> Das
+    RAG-Backend ist <em>retrieval-only</em>: es sucht und gibt Text zurück. Die
+    Schlussfolgerungen zieht ausschließlich ein Agent im Browser.
+  </p>
+
+  <div class="tab">
+    <table>
+      <thead><tr><th>Baustein</th><th>Was es ist</th><th>Wann es läuft</th><th>Was es NICHT tut</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="k">Ollama <span class="marke m-rag">lokal</span></td>
+          <td>Lässt das Embedding-Modell <code>embeddinggemma</code> laufen, Port 11434. Übersetzt einen Text in eine Liste von Zahlen, in der Nähe Ähnlichkeit bedeutet.<span class="neben">Ein <code>lru_cache</code> auf die Frage spart den Roundtrip — die Suchtexte stammen aus dem festen Katalog und wiederholen sich</span></td>
+          <td><strong>Zweimal.</strong> Beim Ingest für jeden der 5.801 Chunks, und bei jeder Anfrage für die Frage selbst — beides muss durch dasselbe Modell, sonst sind die Zahlen nicht vergleichbar.</td>
+          <td>Es erzeugt <strong>keinen Text</strong>. Es formuliert nicht, fasst nicht zusammen, beantwortet nichts.</td>
+        </tr>
+        <tr>
+          <td class="k">ChromaDB <span class="marke m-rag">lokal</span></td>
+          <td>Die Vektordatenbank unter <code>rag/chroma_db</code>. Hält je Chunk den Vektor, den Volltext und die Metadaten (Kürzel, Norm, Region).</td>
+          <td>Einmal beschrieben beim Ingest, bei jeder Anfrage gelesen — zweimal sogar: für die Vektorsuche und für den Volltext, aus dem BM25 seinen Stichwortindex baut.</td>
+          <td>Sie bewertet nichts. Sie liefert die nächsten Nachbarn eines Vektors, nicht die richtige Antwort.</td>
+        </tr>
+        <tr>
+          <td class="k">Die PDFs <span class="marke m-dok">Quelle</span></td>
+          <td>21 Gesetze (12 MB) und 28 Regionalplan-Dateien (481 MB) über sieben Planungsregionen, unverändert wie veröffentlicht.<span class="neben">Der Regionalplan Köln liegt als 22 Einzeldateien — Festlegungen plus Erläuterungskarten</span></td>
+          <td>Nur beim Ingest. Im Betrieb wird keine PDF gelesen.</td>
+          <td>Sie werden nicht ins Modell gegeben. Was das Modell sieht, sind einzelne Passagen im Wortlaut.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="merk">
+    <p>
+      <strong>Warum zwei Suchverfahren parallel laufen.</strong> Ein
+      <em>Embedding</em> findet Sinnverwandtschaft: „Gewässerrandstreifen" und
+      „Uferbereich" liegen nah beieinander, auch ohne gemeinsames Wort. Das ist
+      stark — und blind, wenn es auf ein falsches Wort anspringt.
+      <strong>BM25</strong> zählt dagegen stumpf Wörter und ist unempfindlich:
+      das gesuchte Wort kommt vor oder nicht. Verrechnet werden am Ende nicht
+      die Punktzahlen, sondern die <strong>Ränge</strong> — eine Kosinus-Distanz
+      und eine BM25-Punktzahl sind nicht vergleichbar.
+    </p>
+    <p>
+      Messbar: eine absolute BM25-Grenze wäre genau falsch herum.
+      „Waldumwandlung Genehmigung" (einschlägig) erreicht 9,80 Punkte,
+      „Bundesliga" (abwegig) 12,44 — die Punktzahl hängt an der Wortseltenheit,
+      nicht an der Einschlägigkeit. Trennscharf ist allein die
+      Vektor-Ähnlichkeit, und genau dort sitzt die
+      <strong>Abstinenzschwelle</strong>: unter 0,45 kommt eine leere Liste
+      zurück statt sechs Paragraphen, die zum Thema nichts sagen.
+    </p>
+  </div>
+
+  <div class="merk warn">
+    <p>
+      <strong>Die Ankernorm ist der Gegenentwurf zur Suche</strong> — im
+      Schaubild grün abgesetzt. Für jede der acht Kategorien steht im Katalog
+      die Norm, die den Tatbestand trägt: § 39 LFoG NRW für die Waldumwandlung,
+      § 9 DSchG NRW für das Baudenkmal. Die wird <em>nicht gesucht</em>, sondern
+      per <code>col.get(where={kuerzel, norm})</code> über ihre Fundstelle
+      geholt — kein Embedding, keine Ähnlichkeit, kein Rang. Sie kommt zurück
+      oder sie steht nicht im Korpus.
+    </p>
+    <p>
+      Der Anlass war messbar: § 35 Abs. 3 BauGB ist ein <em>Katalog</em> und
+      taugt deshalb als Entdeckungsschritt. Von den acht Tatbestandsnormen fand
+      die Suche am 11.10. aber <strong>genau eine</strong> — Wald, Wasser,
+      Natur, Verkehr, Energie, Landwirtschaft und Denkmalschutz fehlten alle.
+      Dass § 35 zuverlässig kommt, liegt nicht an guter Retrievalqualität,
+      sondern daran, dass wir seine Fundstelle kennen. Genau diese Kenntnis
+      steht jetzt für alle acht im Katalog.
+    </p>
+  </div>
+
+  <h2 id="gis">Dreierlei Geo-Rechnen — und wir benutzen nur zwei davon</h2>
+
+  <p>
+    Weil die Frage in jeder technischen Runde kommt: <strong>Geoprocessing-Tools
+    kommen hier nicht vor.</strong> Die Abgrenzung ist nicht kosmetisch, sie
+    entscheidet über Laufzeit, Credits und darüber, wer die Daten sieht.
+  </p>
+
+  <div class="tab">
+    <table>
+      <thead><tr><th>Art</th><th>Läuft wo</th><th>Hier im Einsatz</th><th>Kosten</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="k">Geometrie-Operatoren <span class="marke m-sdk">Maps SDK</span></td>
+          <td><strong>Im Browser</strong>, teils als WebAssembly. Arbeiten auf
+              Geometrien, die schon im Speicher liegen.</td>
+          <td><code>geodesicBufferOperator</code> (die Zone),
+              <code>intersectionOperator</code> (der Verschnitt),
+              <code>geodeticAreaOperator</code> /
+              <code>geodeticLengthOperator</code> (das Maß).
+              Import: <code>@arcgis/core/geometry/operators/*</code></td>
+          <td>keine</td>
+        </tr>
+        <tr>
+          <td class="k">Layerabfragen <span class="marke m-sdk">Maps SDK</span></td>
+          <td><strong>Am Dienst.</strong> Ein REST-Aufruf an den Feature
+              Service, der mit Features antwortet.</td>
+          <td><code>layer.queryFeatureCount()</code> für die exakte Zahl,
+              <code>layer.queryFeatures()</code> für die Geometrien.
+              Kein GP-Tool, sondern die normale Abfrage eines Layers.</td>
+          <td>keine</td>
+        </tr>
+        <tr>
+          <td class="k">Geoprocessing-Tools</td>
+          <td><strong>Auf dem Server.</strong> Auftrag hin, warten, Ergebnis
+              zurück — oft als neuer Hosted Layer.</td>
+          <td><strong>gar nicht.</strong> Esris <em>Buffer</em>- oder
+              <em>Overlay&nbsp;Layers</em>-Service wäre der Umweg über den
+              Server für etwas, das lokal in Millisekunden fertig ist.</td>
+          <td>Credits</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>Und <code>queryLayer</code> ist keines von allen dreien</strong> —
+    das ist unser eigener Code, ein <code>FunctionTool</code> in
+    <code>tools.js</code>. Es ruft nur nacheinander die anderen auf: erst die
+    Abfrage am Dienst, dann den Verschnitt lokal, dann das Maß. Seit dem 11.10.
+    gehört es nicht mehr dem Hauptagenten, sondern dem <strong>LayerAgent</strong>
+    — deshalb sitzt sein blauer SDK-Kasten im Schaubild rechts bei diesem
+    Subagenten und nicht links in der Funktionsspalte.
+  </p>
+
+  <div class="merk">
+    <p>
+    <strong>Für Dummies, am Beispiel.</strong> Ein <em>Geoprocessing-Tool</em>
+    ist das Steueramt: Du schickst Unterlagen hin, jemand dort rechnet, du
+    bekommst einen Bescheid. Ein <em>Geometrie-Operator</em> ist der
+    Taschenrechner auf deinem Tisch — niemand muss etwas verschicken. Eine
+    <em>Layerabfrage</em> ist der Anruf im Archiv: „Schickt mir alle Akten in
+    diesem Bereich" — die Akten liegen dort, das Rechnen machst du selbst. Wir
+    telefonieren mit dem Archiv und rechnen am eigenen Tisch; das Steueramt
+    bleibt außen vor.</p>
+  </div>
+</section>
+
+<section id="offen">
+  <h2><span class="nr">03</span>Was gilt und was offen ist</h2>
+  <p class="unter">
+    Stand 11.10.2026. Drei Punkte dieser Liste waren bis dahin offen und sind
+    erledigt; was bleibt, steht unten.
+  </p>
+
+  <div class="merk">
+    <p>
+      <strong>Bestätigt: die Subagenten laufen.</strong> Die
+      Checkpointer-Reparatur greift auf <code>createGraph</code> zu, das in der
+      Typdefinition als <code>@internal</code> markiert ist — ob sie im echten
+      Lauf trägt, war lange unklar. Im Log vom 11.10. stehen <strong>17
+      erfolgreiche Subagenten-Läufe</strong> (1 × Belange, 8 × Regionalplan,
+      8 × Gesetz), null Einträge im Fehlerzweig, und der eingebaute Rückfall hat
+      nie gefeuert: <code>createGraph().compile({ checkpointer })</code> trägt
+      beim ersten Versuch.
+    </p>
+    <p>
+      <strong>Erledigt: Phase 2 hat ihren Subagenten.</strong> Layerwahl,
+      Feldprüfung und Abfrage liegen beim <code>LayerAgent</code> hinter
+      <code>pruefeKategorie</code>.
+    </p>
+    <p>
+      <strong>Erledigt: der Wald fällt nicht mehr heraus.</strong> Über die
+      Ankernorm § 39 LFoG NRW kommt er als BELEGT mit Fundstelle zurück — im
+      Lauf nachgewiesen.
+    </p>
+  </div>
+
+  <ul>
+    <li>
+      <strong>Der LayerAgent ist nie gegen das echte Modell gelaufen.</strong>
+      Lint und Build sind grün; der Beweis wäre eine Konsolenzeile
+      <code>[subagent] Layer-Agent (siedlung): …</code>. Offen ist auch, ob
+      <code>recursionLimit: 40</code> für Kategorien mit vielen Layern reicht.
+    </li>
+    <li>
+      <strong>Die Zahlenprüfung am Bericht hat eine bekannte Lücke.</strong> Sie
+      vergleicht Ziffernfolgen ohne Trennzeichen, damit „3.000" und „3000" als
+      dieselbe Zahl gelten. Ein verrutschtes Dezimaltrennzeichen — „173 km"
+      statt „1,73 km" — hat dieselbe Ziffernfolge und fällt nicht auf. Erkannt
+      werden erfundene, gerundete und nachgerechnete Zahlen.
+    </li>
+    <li>
+      <strong>Der Radius ist nur belegt, wenn die Norm ein Maß nennt.</strong>
+      § 38 WHG („fünf Meter"), § 9 FStrG („40 Meter") und § 43 EnWG („200
+      Metern") tragen es im Wortlaut; § 39 LFoG NRW und § 9 DSchG NRW nicht.
+      Dort bleibt der Radius eine Modellannahme — gekennzeichnet am Chip und im
+      Tooltip, nicht stillschweigend.
+    </li>
+    <li>
+      <strong>Der Modelldienst weist unter Last mit HTTP 429 ab</strong>, bereits
+      bei der Intent-Erkennung des Orchestrators — also bevor der eigene Agent
+      läuft. Der Code erkennt das in drei Erscheinungsformen und wartet 10, 30
+      und 60 Sekunden, bevor er aufgibt. Abstellen lässt sich dieser Aufruf
+      nicht; er ist in der Komponente fest eingebaut.
+    </li>
+    <li>
+      <strong>Drei Regionalpläne laufen über den Seiten-Rückfall.</strong> Ihre
+      Nummerierung passt auf kein Marker-Muster, die Fundstelle ist dann eine
+      Seitenzahl statt einer Ziel-Nummer — gröber, aber belegbar. Und der Plan
+      Arnsberg TA Soest/HSK ist von 2012; für eine Demo besser eine Region mit
+      aktuellem Plan wählen.
+    </li>
+  </ul>
+</section>
+
+<footer>
+  Räumliches Erstscreening eines raumbedeutsamen Vorhabens · ArcGIS Maps SDK for
+  JavaScript 5.1.20 · Esri-gehostete Modelle · Laufende Referenz:
+  <code>CLAUDE.md</code> im Projekt.
+</footer>
+
+</div>

@@ -1,6 +1,12 @@
 # Räumliches Erstscreening — Projektkontext
 
-Diese Datei wird von Claude Code automatisch gelesen.
+Die inhaltliche Referenz des Projekts: jede Entscheidung mit Begründung und
+Messwert. Der Dateiname ist historisch — der Inhalt ist werkzeugunabhängig.
+
+Seit dem 21.10.2026 wird mit **GitHub Copilot Enterprise** weitergearbeitet.
+Dessen Einstiegspunkt ist `.github/copilot-instructions.md`; er verweist
+hierher. Wer neu dazukommt, liest **`docs/UEBERGABE.md`** zuerst — dort stehen
+Projektstand, offene Punkte und wie man die Umgebung startet.
 
 ## Projektziel
 
@@ -65,14 +71,149 @@ Agent würde eine Kategorie melden, zu der er nie Objekte finden kann.
 
 ## Architektur
 
-1. **Ein einzelner `LLMAgent`** (`src/screening/agents.js`), registriert an eine
-   im UI unsichtbare `<arcgis-assistant>` (`#assistant-slot` off-screen,
-   Steuerung nur über `submitMessage()`). Keine Fach-Agenten mehr.
+1. **Ein orchestrierender Hauptagent plus vier Subagenten.** Der Hauptagent
+   (`src/screening/agents.js`) hängt an einer im UI unsichtbaren
+   `<arcgis-assistant>` (`#assistant-slot` off-screen, Steuerung nur über
+   `submitMessage()`). Er führt die Fäden zusammen; die fachliche Arbeit liegt
+   bei den Subagenten in `src/screening/subagenten.js`:
+
+   | Subagent | Werkzeug am Hauptagenten | Aufgabe |
+   |---|---|---|
+   | `BelangeAgent` | `klaereBelange` | liest in § 35 Abs. 3 BauGB nach, welche Belange zu prüfen sind → BELEGT/OFFEN je Kategorie |
+   | `RegionalplanAgent` | `recherchiere` | Ziele und Grundsätze des geltenden Plans |
+   | `GesetzAgent` | `recherchiere` | einschlägige Normen im Gesetzeskorpus |
+   | `LayerAgent` | `pruefeKategorie` | sucht die Layer einer Kategorie, prüft Felder, fragt ab und verschneidet |
+   | `BerichtAgent` | `fasseZusammen` | formuliert den Abschlusstext aus übergebenen Fakten |
+
+   **Die Zahl 429 im Antworttext ist KEIN Dienstfehler** (korrigiert
+   2026-10-11 abends). `DIENST_FEHLER` hiess `/\b429\b|…/` und traf damit in
+   jeder Fachantwort, die zufällig so eine Zahl enthielt. Im Lauf hat es
+   **dreimal** gefeuert: „Vegetationsflächen: 429 Objekte" wurde als
+   Dienstabweisung verworfen, ebenso zwei Antworten, in denen weiter hinten
+   eine Zahl wie `1.429` stand — das Wortgrenzenpaar `\b429\b` trifft auch
+   hinter einem Tausenderpunkt. Gemessen: **6 von 7** realistischen
+   Fachantworten hielt das alte Muster für einen Dienstfehler.
+
+   Die Messwerte lagen danach trotzdem im Store (`queryLayer` schreibt sie
+   unabhängig vom Rückgabewert hinein), aber der Hauptagent bekam
+   `layerFehlgeschlagen` gemeldet und prüfte dieselben Kategorien erneut — das
+   erklärt die drei Nachfass-Runden in dem Lauf. **In `app.js` war es
+   gefährlicher:** `fehlertext()` fällt ohne `error` auf `antwort.text`
+   zurück, also auf die VOLLE Antwort des Hauptagenten; eine solche Zahl in
+   der Zusammenfassung hätte den ganzen Lauf als Dienstabweisung gewertet, mit
+   10/30/60 Sekunden Warten und Abbruch danach. Dass es nicht eintrat, war
+   Zufall.
+
+   Beide Stellen tragen jetzt dasselbe Muster: die Zahl zählt nur in einem
+   **Fehlerkontext** (`http`, `statuscode`, `code`, `error`, `fehler`, höchstens
+   10 Nicht-Ziffern davor), die eindeutigen Wortmarken (`too many requests`,
+   `rate limit`, `high demand`, `exceeds the maximum usage size`) tragen den
+   Rest. 17 Fälle geprüft: zehn echte Fehlermeldungen treffen, sieben gültige
+   Fachantworten nicht.
+
+   **Am 2026-10-11 erstmals gegen das echte Modell bestätigt**: 17
+   erfolgreiche Subagenten-Läufe im Log (1 × Belange, 8 × Regionalplan,
+   8 × Gesetz), null Einträge im `catch`-Zweig, und der Rückfall in
+   `graphVon()` hat nie gefeuert — `createGraph().compile({ checkpointer })`
+   trägt beim ersten Versuch.
+
+   **Im zweiten Lauf desselben Tages auch `LayerAgent` und `BerichtAgent`
+   bestätigt**: Layer-Agent für alle acht Kategorien, Bericht-Agent dreimal,
+   null Einträge im `catch`-Zweig. Die Antwort für „energie" war **2234
+   Zeichen** lang und wurde auf 1500 gekürzt — `maxText` der Layerprüfung steht
+   deshalb jetzt auf 3000. Dass die Kürzung überhaupt aufgefallen ist, liegt an
+   der Warnung, die `frage()` seitdem ausgibt.
+
+   **Der Hauptagent hat absichtlich NUR noch fünf Werkzeuge**
+   (`holeVorhabenKontext`, `bestimmeRegion`, `meldeRelevanz`,
+   `meldeNichtRelevant`, `fasseZusammen`). `beschreibeLayer` und `queryLayer`
+   gehören dem `LayerAgent`, die Recherche den beiden Recherche-Agenten, der
+   Abschlusstext dem `BerichtAgent`.
+
+   **Warum es zu jedem Ziel genau EINEN Weg gibt.** Der Abschlusstext hatte
+   zwei: `schreibeBericht` liess den Subagenten formulieren und gab den Text
+   zurück mit der Anweisung, ihn „unverändert an `fasseZusammen`
+   weiterzugeben" — ein Handschlag in zwei Schritten, auf den sich das Modell
+   halten musste. Im Lauf vom 2026-10-11 hat es `schreibeBericht`
+   **übersprungen** und direkt `fasseZusammen` gerufen; der Abschlusstext kam
+   damit vom Hauptagenten. `schreibeBericht` ist deshalb entfallen, und
+   `fasseZusammen` läuft selbst durch `formuliereBericht()` (`bericht.js`).
+   Dieselbe Logik beim `LayerAgent`: `beschreibeLayer` und `queryLayer` sind
+   aus `baueTools()` entfernt, nicht nur im Prompt abgeraten. **Zwei Wege zum
+   selben Ziel sind keine Redundanz, sondern eine Einladung.**
+
+   **Modulschnitt, damit kein Importzyklus entsteht:** `tools.js` braucht
+   `formuliereBericht`, und `subagenten.js` braucht umgekehrt die
+   Werkzeug-Fabriken aus `tools.js`. Die gemeinsame Lauf-Mechanik (`graphVon`,
+   `laufen`, `frage`) liegt deshalb in **`agentlauf.js`**, der BerichtAgent in
+   **`bericht.js`**; die Kette ist `tools.js → bericht.js → agentlauf.js`,
+   zyklusfrei. Ein ESM-Zyklus wäre hier zwar zulässig gewesen — alle Bindings
+   sind gehobene Funktionsdeklarationen — aber eine Fussangel für jeden, der
+   später Top-Level-Code ergänzt.
+
+   **`frage()` hat einstellbare Längen** (`maxText`, `maxLog`,
+   `recursionLimit`). Die Deckel waren fest: 600 Zeichen an den Hauptagenten,
+   300 in die Konsole, `recursionLimit` 8. Für einen Recherchebefund zu EINER
+   Kategorie passt das; für die Belange-Einstufung mit einer Zeile je Kategorie
+   nicht, und für die Layerprüfung reicht ein Limit von 8 nicht einmal für den
+   zweiten Layer. Die Belange-Antwort bekommt 2000/1200, die Layerprüfung
+   1500/700 bei `recursionLimit: 40`. Zusätzlich **warnt** `frage()` jetzt,
+   wenn sie kürzt.
+
+   **Ein Messfehler, der als Modellfehler aussah** (festgehalten, weil er sich
+   wiederholen kann): Im Log erschien die Belange-Antwort mit fünf von acht
+   Kategorien und endete nach **299** Zeichen — eine Stelle vor dem Schnitt bei
+   300. Nicht das Modell hat aufgehört, sondern `console.info`. Dass der Text
+   an den Hauptagenten mit 600 Zeichen knapp genügte, war Glück. Die
+   Vollständigkeit wird trotzdem geprüft: `klaereBelange` vergleicht die
+   Antwort gegen `FB_IDS` und fasst bei fehlenden Kategorien **genau einmal**
+   nach — Erkennung im Code, Korrektur durch das Modell.
+
+   **Der `checkpointer`-Fehler, der die Subagenten lahmgelegt hatte, ist
+   behoben.** `LLMAgent` setzt beim Modellaufruf intern `checkpointer: true` —
+   in LangGraph heisst das „**erbe** den des übergeordneten Graphen". Unter dem
+   Orchestrator der `<arcgis-assistant>` gibt es diesen Elternteil; bei
+   direktem `agent.run()` ist der Graph ein **Wurzelgraph** ohne Elternteil,
+   und LangGraph lehnt ab: *„checkpointer: true cannot be used for root
+   graphs."* `agent.run()` kompiliert ohne Optionen. `graphVon()` kompiliert
+   deshalb selbst — `agent.createGraph().compile({ checkpointer: new
+   MemorySaver() })` — und `laufen()` ruft den Graphen mit eigenem `thread_id`
+   je Durchlauf auf, damit sich die Kategorien keinen Gesprächsfaden teilen.
+   `createGraph` ist in der Typdefinition `@internal`; `@langchain/langgraph`
+   steht deshalb seit 2026-10-09 als **direkte** Abhängigkeit in
+   `package.json` (gepinnt auf die vom SDK installierte Version), damit der
+   Zugriff nicht an einer transitiven Auflösung hängt.
+
+   Ein früherer `WorkflowAgent`-Aufbau lief durch und meldete „fertig", ohne
+   ein Werkzeug auszuführen — deshalb die Arbeitsteilung über Werkzeuge statt
+   über eine Agenten-Hierarchie.
    `recursionLimit` per Middleware auf 120.
    `<arcgis-assistant-agent>` muss **vor** dem DOM-Einhängen der Assistant
    angehängt sein, sonst „No agents found" (Race).
 2. **Modell:** Esri-gehostet über `@arcgis/ai-components`, Stufe `MODEL_TIER`
-   in `src/config.js` (`"default"`). Kostet ArcGIS-Credits.
+   in `src/config.js` — steht auf **`"fast"`** (nicht `"default"`, wie hier
+   bis 2026-10-11 stand).
+
+   **Welches Modell:** Die Typdefinition kennt nur eine Stufe
+   (`"advanced" | "default" | "fast"`, `LLMAgent.d.ts:24`) und nennt kein
+   Modell. Die **Release Notes zu 5.1** tun es: *„a new `fast` model tier
+   (GPT-5.4-nano)"*. Für `default` und `advanced` ist keines genannt. Laut FAQ
+   gilt: *„You cannot change the LLM used by agents provided by the JavaScript
+   Maps SDK, including the LLM used for agent orchestration."* — ein eigenes
+   Modell ginge nur über einen eigenen LangGraph-Backend-Weg, nicht über die
+   Agent-Utilities (Stand 5.1).
+
+   **KOSTEN — hier stand das Gegenteil des Richtigen.** Bis 2026-10-11 stand
+   hier „Kostet ArcGIS-Credits". Das ist falsch. Esris FAQ zu den agentischen
+   Apps sagt: *„There will be no cost to end users or organizations for using
+   AI components during the beta period."* Die AI-Komponenten sind in 5.1
+   weiterhin **Beta**. Für danach kündigt dieselbe Seite Kosten an — bemessen
+   an der *„number of interactions with agents and LLM calls made through the
+   components"*, mit einer Struktur, die erst in einem Preview-Release
+   festgelegt wird. Also: **jetzt kostenlos, später nach Aufrufen.**
+   Quellen: `developers.arcgis.com/javascript/latest/agentic-apps/ai-faq/`
+   und die Release Notes zu 5.1.
+
 3. **Werkzeuge** (`src/screening/tools.js`) — der geometrische Teil ist
    deterministisch und liefert die Zahlen fürs Dashboard; das Modell tippt keine
    Zahlen ab:
@@ -372,7 +513,74 @@ Agent würde eine Kategorie melden, zu der er nie Objekte finden kann.
      auflistet. Deterministische Erkennung, Korrektur durch das Modell — wie
      bei `fehlendeKategorien()` und `offeneLayer()`.
    - `meldeRelevanz` — fachliche Einordnung je Kategorie + **eigener
-     Untersuchungsradius** mit Herleitung; zeichnet die Zone (unsichtbar)
+     Untersuchungsradius** mit Herleitung; zeichnet die Zone (unsichtbar).
+
+     **Der Radius wird jetzt gegen die Dokumente geprüft** (`radiusBelegt()`).
+     Er war der einzige Wert im Ergebnis, den das Modell frei setzen konnte —
+     ohne Wertebereich und ohne Abgleich mit dem Zitat, auf das er sich berief.
+     Geprüft wird gegen den **Volltext der Fundstellen dieser Kategorie**, in
+     Ziffern (`1000`, `1.000`, als km bei runden Werten) **und als Zahlwort**:
+     § 38 WHG schreibt „fünf Meter", nicht „5 m" — ohne die Zahlwortliste
+     fände die Prüfung den wichtigsten Beleg im Korpus nicht. Die Wortgrenzen
+     sind scharf, „40" trifft nicht in „140 Meter" (sechs Testfälle geprüft).
+     Beide Recherche-Prompts verlangen entsprechend: Meterzahl **nur** wenn im
+     Text, mit Fundstelle, sonst `-`.
+     **Eine Zahl ohne Längeneinheit belegt nichts** (korrigiert 2026-10-11).
+     Vorher fehlte diese Bedingung, und bei runden Werten kippte die Prüfung
+     komplett: zu `3000` wurde zusätzlich die Kilometerform `3` gesucht, und
+     eine nackte „3" steht in jedem Gesetzestext. Im Lauf vom 2026-10-11
+     meldete die Prüfung **5 von 8 Radien als belegt** — belegt waren sie auf
+     „§ 35 Abs. **3** Nr. 1" (3000 m), „Absätzen 1 und **2**" (2000 m) und
+     „Absatz **5**" (5000 m). Also auf Absatznummern statt auf Abständen, und
+     damit genau die Falschaussage, die das Werkzeug verhindern soll — sie sah
+     im Chip aus wie ein Beleg. Jetzt verlangt jeder Zweig eine Einheit, und
+     die muss zur Schreibweise passen: Ziffern und Zahlwörter nur mit
+     m/Meter/Metern, die Kilometerform nur mit km/Kilometer/Kilometern. „3
+     Meter" belegt also keinen 3000-m-Radius mehr. 21 Fälle geprüft, darunter
+     die vier Falschtreffer aus dem Lauf und die echten Belege „fünf Meter"
+     (§ 38 WHG), „40 Meter"/„20 Meter" (§ 9 FStrG) und „200 Metern" (§ 43
+     EnWG). Fehlt die Einheit im Dokument, gilt der Radius als unbelegt — das
+     ist die richtige Richtung zu irren.
+
+     **Was die reparierte Prüfung über die Radien aussagt** (Lauf vom
+     2026-10-11 abends): **8 von 8 nicht belegt** — gemeldet wurden 1.000,
+     2.000, 3.000 und 5.000 m. Vorher galten fünf davon als belegt, und zwar
+     auf Absatznummern. Das ist kein Rückschritt, sondern der ehrliche Stand.
+
+     **Entschieden am 2026-10-11: es bleibt so.** Für die Demo ist ein als
+     Modellannahme gekennzeichneter Radius das fachlich richtige Ergebnis — die
+     Normen kennen keinen Untersuchungsradius, und eine eigene Formel wäre
+     Scheingenauigkeit. Korrigiert wurde stattdessen die **Behauptung in der
+     Oberfläche**: der Tooltip sagte „Radius belegt in § 43 EnWG" und
+     behauptete damit mehr, als die Prüfung zeigt. Sie prüft, ob die ZAHL im
+     Wortlaut vorkommt — nicht, ob sie dort ein Abstand ist. § 43 EnWG führt
+     „200 Metern" als **Gesamtlänge** einer Freileitung; ein gemeldeter
+     200-m-Radius gilt danach als belegt. Der Tooltip nennt jetzt genau das:
+     „Diese Meterzahl steht im Wortlaut von … Geprüft ist die Zahl, nicht ihre
+     fachliche Bedeutung." Von den acht Ankernormen tragen **zwei** eine echte
+     Abstandsangabe (§ 38 WHG fünf Meter Randstreifenbreite, § 9 FStrG 40/20 m
+     Anbauverbotszone), eine eine Zahl ohne Abstandsbezug (§ 43 EnWG), fünf
+     keine.
+
+     **Das Maßstabsproblem dahinter, bewusst nicht gelöst.** Die Normen nennen
+     *Abstandsvorschriften*: fünf Meter Gewässerrandstreifen (§ 38 WHG), 40
+     bzw. 20 Meter Anbauverbotszone (§ 9 FStrG), 200 Meter Freileitungslänge
+     (§ 43 EnWG). Das Modell braucht aber einen *Untersuchungsradius* für ein
+     Erstscreening, und der liegt bei einer 150-m-Windenergieanlage in
+     Kilometern. Beides sind verschiedene Größen, und die zweite steht in
+     keinem der Dokumente. Die Forderung „der Radius muss aus den Dokumenten
+     hervorgehen" ist damit für runde Kilometerwerte praktisch nie erfüllbar.
+     Drei denkbare Wege, keiner umgesetzt: (a) so lassen — jeder Radius ist
+     dann sichtbar eine Modellannahme, was fachlich korrekt ist; (b) den
+     Untersuchungsradius aus der Vorhabenhöhe ableiten (deterministisch,
+     belegbar, aber unsere Formel statt einer Norm); (c) die Abstandsvorschrift
+     als Mindestradius nehmen und den Screening-Aufschlag getrennt ausweisen.
+     **Das ist eine fachliche Entscheidung, keine technische.**
+
+     Ist die Zahl nicht belegt, geht `radiusBelegt: false` in den Store, das
+     Werkzeug sagt es dem Modell zurück, und der Umfeld-Chip bekommt einen
+     Stern, eine gestrichelte Kante und im **Tooltip** den Vermerk, dass es
+     sich um eine Modellannahme handelt (`an.radiusAnnahme`).
    - `meldeNichtRelevant` — geprüft und verworfen, mit Begründung und
      Fundstelle. Erscheint unten im Ergebnis, damit ein betrachteter Belang
      nicht einfach fehlt; Kategorien, die der Agent gar nicht angefasst hat,
@@ -402,7 +610,20 @@ Agent würde eine Kategorie melden, zu der er nie Objekte finden kann.
      Regionalplan- und Gesetzes-Subagent per `Promise.all` **gleichzeitig**
      laufen lässt und je (Kategorie, Vorhaben) cacht. Halbiert Wartezeit und
      Modellrunden gegenüber zwei getrennten Werkzeugen.
-   - `fasseZusammen` — Schlusstext
+   - `fasseZusammen` — Schlusstext. **Formuliert wird vom `BerichtAgent`**,
+     nicht vom Hauptagenten: was er übergibt, sind die FAKTEN als Stichpunkte.
+     Der Rückweg ist abgesichert — `unbelegteZahlen()` prüft **jede
+     Ziffernfolge** im formulierten Text gegen die übergebenen Fakten. Steht
+     eine nicht drin, wird der ganze Text verworfen und die Stichpunkte des
+     Hauptagenten bleiben stehen; Grund und Zahlen gehen ans Modell zurück.
+     Verglichen wird die **Ziffernfolge ohne Trennzeichen** — „3.000" gilt als
+     „3000", „1,73" als „1.73". Bewusst nicht interpretiert: ein Punkt trennt
+     im Deutschen Tausender und im Englischen Dezimalstellen, und daran die
+     Prüfung scheitern zu lassen hiesse, einen inhaltlich richtigen Bericht
+     wegen seiner Schreibweise zu verwerfen — der teurere Fehler.
+     **Bekannte Lücke:** ein verrutschtes Dezimaltrennzeichen („173 km" statt
+     „1,73 km") hat dieselbe Ziffernfolge und fällt nicht auf. Erkannt werden
+     erfundene, gerundete und nachgerechnete Zahlen (11 Fälle geprüft).
 4. **npm/Vite Pflicht, kein CDN** — eigene Agents gehen nur über den npm-Weg.
 5. **Ratenbegrenzung des Modelldienstes** (`DIENST_FEHLER` in `app.js`): Der
    Esri-Dienst antwortet bei Überlast mit HTTP 429 („The system is currently
@@ -517,7 +738,30 @@ Agent würde eine Kategorie melden, zu der er nie Objekte finden kann.
   gesprungen ist.
   Nach dem Lauf ruft `zeigeGefundeneObjekte()` (aus `app.js` am Ende von
   `runScreening`) erst `alleLayerAus()` und blendet dann nur die abgefragten
-  Layer ein — **gefiltert allein über die ObjectIDs**. Ein `where` taugt dafür
+  Layer ein — **gefiltert allein über die ObjectIDs**.
+  **Gefiltert wird über `FeatureFilter.objectIds` an der LayerView**
+  (`FeatureFilter.d.ts:205`, `FeatureLikeLayerView.filter` seit 4.11), nicht
+  mehr über `definitionExpression`. Grund: die `definitionExpression` hängt der
+  Layer an **jede Kachelanfrage** an. 277 ObjectIDs sind dort rund 1.900
+  Zeichen, der frühere Deckel von 2.000 IDs wäre über 14.000 gewesen — weit
+  jenseits dessen, was ein Dienst in einer URL annimmt. Im Lauf vom 2026-10-11
+  schlugen unmittelbar nach dem Setzen der Filter **161 Kachelanfragen** fehl,
+  verteilt auf die 12 Kacheln des Sichtfelds. Der LayerView-Filter wirkt
+  clientseitig; die Kacheln laden unverändert.
+  Die LayerViews werden **einmal beim Kartenstart** geholt
+  (`merkeLayerViews()`, hängt sie als `__lv` an den Layer) — damit bleibt
+  `zeigeLayerGefiltert()` **synchron**. Das ist keine Kosmetik: holte die
+  Funktion die LayerView selbst per `await`, könnte das Zurücknehmen in
+  `alleLayerAus()` nach dem Setzen landen und den frischen Filter wieder
+  löschen — bei schnellen Klicks in der Ergebnisliste ein Wettrennen mit leerer
+  Karte als Ausgang. `MAX_ID_FILTER` ist auf **200** gesenkt und gilt nur noch
+  für den `definitionExpression`-Rückfall (nicht-numerische IDs, fehlende
+  LayerView); darüber bleibt der Layer lieber ungefiltert sichtbar als
+  unsichtbar.
+  **Im Lauf vom 2026-10-11 bestätigt:** `[karte] LayerViews bereit: 27/36` und
+  **null** Kachelfehler (vorher 161). Die neun ohne `filter`-Fähigkeit sind die
+  **Gruppenlayer** der Webmap (Gewässer, Vegetation, Verkehr, Bauwerke und
+  Einrichtungen, …) — die tragen keine Features und brauchen keinen Filter. Ein `where` taugt dafür
   nicht: es filtert nach Attribut ohne Raumbezug und legt den landesweiten
   Bestand über die Karte. Ohne brauchbare IDs bleibt der Layer aus. Während des
   Laufs passiert nichts, sonst flackert die Karte bei jeder Einzelabfrage.
@@ -606,6 +850,146 @@ Endpunkte: `POST /rechtsgrundlage {frage}` und `POST /regionalplan {region, frag
 Port 8000, CORS offen. `npm run dev` startet den Server automatisch mit
 (Vite-Plugin). **Ollama muss laufen.**
 
+### `/belange` — welche Belange sind für DIESES Vorhaben einschlägig?
+
+Die umgekehrte Frage zu `/rechtsgrundlage`: dort ist der Belang vorgegeben und
+gesucht wird die Norm, hier ist nur das Vorhaben bekannt. Sie ersetzt die
+Stelle, an der die Einstufung **dreimal** gescheitert ist (8/8 relevant, dann
+0/8, dann 1/8) — das Modell urteilt dort nicht mehr, es **liest**.
+
+**Zwei Verfahren wurden gemessen und verworfen:**
+
+1. **Treffer je Rechtsgebiet auszählen** über die `rb_<gebiet>`-Flags. Misst
+   mit, wie dick ein Gesetz ist: Leitungsrecht stellt 1.382 der 4.407 Chunks
+   (31 %), Waldrecht 179 (4 %) — entsprechend landete Leitungsrecht bei Wind,
+   Mobilfunk *und* Photovoltaik auf Platz 1.
+2. **Dasselbe, normiert auf den Korpusanteil** (Lift = beobachtet/erwartet).
+   Kippt in die Gegenrichtung: die kleinen Gebiete gewinnen, Bauordnungsrecht
+   steht überall vorn, und bei einer Windenergieanlage fällt ausgerechnet der
+   **Naturschutz** heraus.
+
+**Was bleibt, zählt gar nichts: die Liste steht im Gesetz.** § 35 Abs. 3 BauGB
+zählt die öffentlichen Belange auf, die einem Aussenbereichsvorhaben
+entgegenstehen können — Flächennutzungsplan, Wasser-/Abfall-/Immissionsschutz,
+schädliche Umwelteinwirkungen, Verkehrseinrichtungen und Versorgung,
+Naturschutz/Landschaftspflege/Bodenschutz/Denkmalschutz/Landschaftsbild,
+Agrarstruktur/Wasserwirtschaft/Hochwasserschutz, Splittersiedlung, Funkstellen.
+Der Endpunkt liefert die Passagen im **Wortlaut** (`BELANGE_ZEICHEN = 1200` —
+weniger, und die Aufzählung bricht mittendrin ab), das Modell liest sie ab und
+nennt die Fundstelle.
+
+Gemessen am 2026-10-09: § 35 BauGB liegt für **alle sechs Vorhabenarten** unter
+den ersten fünf Treffern, bei vieren auf Platz 1. Dazu kommen die
+vorhabenspezifischen Normen (BNatSchG § 45b bei Wind, FStrG § 9 bei
+Photovoltaik, TKG bei Mobilfunk).
+
+#### Die Ankernormen — geholt statt gesucht (seit 2026-10-11)
+
+**Die Lücke, die das schliesst:** Belange mit eigenem Genehmigungstatbestand
+stehen nicht in § 35 Abs. 3. **Wald war der Anlass** — die Waldumwandlung
+regelt § 39 LFoG NRW, und Forstrecht erschien in den gesuchten Passagen nie,
+auch nicht bei 14 Treffern und auch nicht mit einer zweiten, eingriffsbezogenen
+Frage („Rodung, Zuwegung, Versiegelung"): der Vorhabentyp dominiert das
+Embedding zu stark.
+
+**Gemessen am 2026-10-11 war der Wald aber kein Sonderfall, sondern der
+Normalfall.** Vorhaben WEA, `/belange` mit den acht Ankernormen: die Suche
+lieferte BauGB §§ 16b/35, BNatSchG §§ 26/45b, WHG § 11a, BauO NRW § 6 — also
+**genau eine** der acht Ankernormen (§ 35 BauGB). Sieben von acht
+Tatbestandsnormen fehlten in den Passagen:
+
+| Kategorie | Ankernorm | in den Passagen? |
+|---|---|---|
+| siedlung | BauGB § 35 | ja |
+| natur | BNatSchG § 14 | nein |
+| wasser | WHG § 38 | nein |
+| wald | LFoG NRW § 39 | nein |
+| verkehr | FStrG § 9 | nein |
+| energie | EnWG § 43 | nein |
+| landwirtschaft | BauGB § 1a | nein |
+| kulturlandschaft | DSchG NRW § 9 | nein |
+
+**Der Denkfehler war, § 35 Abs. 3 für einen Retrieval-Erfolg zu halten.** Er
+kommt zuverlässig, weil wir **wissen, wo der Katalog steht** — nicht weil die
+Suche gut ist. Dieselbe Kenntnis liegt für jede Kategorie im Katalog
+(`ankernorm` in `kategorien.js`), also wird sie auch so benutzt:
+
+- `/belange` nimmt eine Liste `ankernormen: [{kuerzel, norm, kategorieId}]`
+  und holt jede über **`col.get(where=…)`** — reiner Metadatenzugriff. Kein
+  Embedding, keine Ähnlichkeit, keine Abstinenzschwelle, nichts zu fusionieren.
+  Die Norm kommt zurück oder sie steht nicht im Korpus (`ankerFehlend`).
+- **Warum aus dem LFoG keine Liste zu holen ist:** § 35 Abs. 3 BauGB ist ein
+  *Katalog* — eine Passage, viele Belange, deshalb als Entdeckungsschritt
+  brauchbar. Ein Fachgesetz regelt *ein* Schutzgut. Es braucht aber auch keine
+  Liste: zu welcher Kategorie es gehört, steht im Katalog.
+- **`_ankernorm()` wählt nicht das erste Chunk.** Bei DSchG NRW § 9 ist das
+  erste Stück ein Inhaltsverzeichnis-Artefakt aus 269 Zeichen („Abschnitt 3 /
+  Denkmalbereiche / Herausgeber: …"), der Normtext steht im zweiten. Gewählt
+  wird das erste Stück mit **`(1)` am Zeilenanfang**, und der Auszug beginnt
+  dort — das schneidet bei LFoG NRW § 39 zugleich den Fussnotenblock weg, der
+  sonst die halbe Auszugslänge frisst. Fehlt der Marker, gewinnt das längste
+  Stück. Sortiert wird über die laufende Nummer am Ende der Chunk-ID.
+  `ANKER_ZEICHEN = 760`; bei 600 fiel die Fünf-Meter-Angabe in § 38 WHG heraus.
+- **Nebengewinn für den Radius:** § 38 WHG („fünf Meter"), § 9 FStrG („40
+  Meter", „20 Meter") und § 43 EnWG („200 Metern") tragen ihre Maße im
+  Wortlaut. `radiusBelegt()` liest `anker:<kategorieId>` **als erste Quelle** —
+  vorher hing die Belegbarkeit daran, ob die Suche die richtige Norm fand.
+
+**Drei Gruppen statt zwei.** Weil jede Kategorie ihre Tatbestandsnorm im
+Wortlaut vor sich hat, ist OFFEN nicht mehr die Sammelstelle für „Suche hat
+nichts gefunden": **BELEGT** (in einer Passage genannt oder die Ankernorm
+knüpft einen auslösbaren Tatbestand an), **NICHT BERÜHRT** (Ankernorm liegt
+vor, ihr Tatbestand kann von dieser Bauart nicht ausgelöst werden — mit
+Fundstelle und dem fehlenden Tatbestandsmerkmal) und **OFFEN** nur noch für
+Kategorien in `ankerFehlend`. Recherchiert werden weiterhin alle Gruppen,
+verworfen wird erst in `meldeNichtRelevant`.
+
+### Hybride Suche (seit 2026-10-09)
+
+Vorher reine Vektorsuche, `n_results=6`, fertig. Das war der Eigenbau, der die
+Retrievalqualität allein von der Formulierung des Suchtexts abhängig machte.
+Jetzt der übliche Aufbau:
+
+1. **Zwei Zweige, je `KANDIDATEN = 40`** — Dense über `embeddinggemma`, dazu
+   BM25 (`rank_bm25`) über eine beim ersten Zugriff gebaute Collection-Kopie.
+   Der Stichwortindex nimmt Überschrift und Zitat mit auf; die Tokenisierung
+   trennt am `§` und behält Ziffern, damit „38" in „§ 38 WHG" ein Suchwort ist.
+2. **Reciprocal Rank Fusion**, `RRF_K = 60`. Punktzahlen aus Kosinus und BM25
+   sind nicht vergleichbar — fusioniert werden deshalb die Ränge.
+3. **Abstinenz-Schwelle `MIN_AEHNLICHKEIT = 0.45`**, geprüft an der besten
+   Ähnlichkeit der **ganzen Anfrage**, nicht je Treffer: Liegt sie darunter,
+   kommt eine leere Liste. Vorher lieferte die Suche immer sechs Paragraphen,
+   auch wenn der Korpus zum Thema nichts enthielt — und das Modell las sie als
+   Befund.
+4. **Dubletten raus** über `kuerzel|norm` bzw. `kuerzel|nummer`. Ein Ziel kann
+   über mehrere Chunks laufen; zweimal dieselbe Fundstelle verbraucht einen der
+   wenigen Plätze beim Modell.
+
+Die Antwort führt `aehnlichkeit` und `stichwort` getrennt mit, damit
+nachvollziehbar bleibt, welcher Zweig einen Treffer nach oben gebracht hat.
+
+**Gemessen am 2026-10-09** (Vorhaben WEA, Münsterland, `top_k=4`): alle acht
+Kategorien liefern in beiden Korpora ausschliesslich einschlägige Normen —
+Wasser → WHG/LWG NRW, Wald → LFoG NRW/BWaldG, Kulturlandschaft → DSchG NRW,
+Verkehr → FStrG/StrWG NRW, keine Dubletten. Zum Vergleich: mit reiner
+Vektorsuche kam für Kulturlandschaft kein Denkmalrecht zurück.
+
+**Zwei Befunde aus der Messung, die der Intuition widersprechen:**
+
+- **Eine absolute BM25-Grenze wäre genau falsch herum.** „Waldumwandlung
+  Genehmigung" (einschlägig) erreicht 9,80 Punkte, „Bundesliga" (abwegig)
+  12,44. Die Stichwortpunktzahl hängt an der Wortseltenheit, nicht an der
+  Einschlägigkeit. Trennscharf ist allein die Vektor-Ähnlichkeit: Katalogfragen
+  0,584–0,727 gegen 0,000–0,181 bei abwegigen.
+- **Die Hybridsuche rettet eine schlechte Frage nicht.** Mit dem alten
+  Suchtext (Vorhabentyp zuerst) liefert sie für Kulturlandschaft weiterhin kein
+  Denkmalrecht. Sie macht robuster, ersetzt aber `wirkungsfrage()` nicht.
+
+**Der Korpus braucht echte Umlaute.** „Gewaesserrandstreifen" in ASCII fällt
+unter die Abstinenz-Schwelle und liefert **null** Treffer, „Gewässerrandstreifen"
+findet WHG § 38 auf Platz 1 (Ähnlichkeit 0,65). Das ist der harte Grund hinter
+der Projektregel zu Umlauten in Suchtexten.
+
 Tempo: ein dauerhafter `httpx.Client` statt eines neuen je Anfrage und ein
 `lru_cache` auf `_embed_query` — die Suchtexte stammen aus dem festen
 Kategorien-Katalog und wiederholen sich, der Ollama-Roundtrip entfällt dann.
@@ -685,8 +1069,16 @@ src/screening/kontext.js       Vorhabenart + Kommentar (holeVorhabenKontext)
 src/screening/kategorien.js    Katalog der 8 Kategorien (rechtlich hergeleitet
                                aus den Festlegungskapiteln nach § 7 ROG)
 src/screening/tools.js         FunctionTools des Hauptagenten + Fortschritts-Middleware
-src/screening/subagenten.js    Regionalplan- und Gesetzes-Subagent hinter EINEM
-                               Werkzeug `recherchiere` (parallel + Cache)
+src/screening/agentlauf.js     graphVon / laufen / frage - die gemeinsame
+                               Mechanik, mit der ein Subagent laeuft. Eigenes
+                               Modul, damit tools.js <-> subagenten.js kein
+                               Importzyklus wird
+src/screening/bericht.js       BerichtAgent + formuliereBericht() - von
+                               fasseZusammen aus tools.js gerufen
+src/screening/subagenten.js    Vier Subagenten hinter drei Werkzeugen:
+                               klaereBelange (BelangeAgent), recherchiere
+                               (Regionalplan + Gesetz, parallel + Cache),
+                               pruefeKategorie (LayerAgent, je Kategorie)
 src/import.js                  Shapefile-Upload: der Nutzer wählt den ORDNER
                                (`webkitdirectory`), die Teile werden per JSZip
                                im Browser gepackt und an den Portal-Endpunkt
@@ -726,7 +1118,38 @@ Fehlt ein Layer, sagt er das.
 - Regionalplan Arnsberg TA Soest/HSK ist von **2012** — deutlich älter als die
   übrigen. Für eine Demo besser eine Region mit aktuellem Plan wählen (OWL,
   Ruhr, Köln, Münsterland).
-- Credits-Verbrauch der `LLMAgent`-Aufrufe nicht gemessen.
+- **Kosten: in der Beta keine** (geprüft am 2026-10-11 an Esris FAQ). Nach
+  der Beta nach Zahl der Aufrufe. Gemessen ist der Verbrauch nicht.
+  Ein Tokenzähler über alle sechs Agenten war am 2026-10-11 gebaut und am
+  2026-10-20 auf Wunsch wieder **entfernt** — er hatte seinen Zweck erfüllt:
+  die Zahlen kommen als `usage_metadata` an der Modellnachricht an (für den
+  Hauptagenten gemessen, 10 Aufrufe / 57.862 Tokens), gelesen im
+  `afterModel`-Hook einer Middleware. Wer ihn wieder braucht: `handler` ist in
+  `AgentMiddleware` PFLICHT (`middlewares/types.d.ts:73`), ein Durchreicher
+  `(req, next) => next(req)` genügt — ohne ihn fallen alle Subagenten mit
+  `n.handler is not a function` aus.
+  Als Gegenprobe taugt die Credit-Anzeige des Portals (Organisation →
+  Credits) vor und nach einem Lauf; sie misst, was wirklich abgerechnet wird.
+
+  **Was ein Lauf an Modellaufrufen auslöst** (aus dem Log vom 2026-10-11
+  hochgerechnet, nicht gemessen): 4 Intent-Erkennungen des Orchestrators,
+  ~46 Runden im Hauptagenten (42 Werkzeugaufrufe), ~32 in den beiden
+  Recherche-Agenten, ~126 im LayerAgent (21 Läufe), ~3 im BerichtAgent —
+  zusammen rund **210 Modellaufrufe**. Davon waren 20 von 42
+  `pruefeKategorie`-Aufrufen Wiederholungen durch den 429-Fehlalarm; nach
+  dessen Behebung sollte der nächste Lauf deutlich darunter liegen.
+- **Ein bewusst übersprungener Layer wird nirgends vermerkt.** Der
+  `LayerAgent` darf einen Layer ausdrücklich als nicht einschlägig abtun
+  („BaumreihenundHecken: übersprungen – gehört fachlich zu natur"), und das
+  steht auch in seiner Antwort. `offeneLayer()` sieht davon nichts: es
+  vergleicht nur gegen `getAnalyse().abfragen` und schlägt denselben Layer in
+  der nächsten Runde wieder vor. Im Lauf vom 2026-10-11 blieben so über drei
+  Nachfass-Runden 6 → 5 → 5 Layer „offen", bis die Abbruchbedingung („keine
+  Bewegung mehr") griff — zwei Runden ohne Wirkung. Behebbar mit einem
+  `merkeUebersprungen(kategorieId, layer, grund)`, das `offeneLayer()` dann
+  ausschliesst; offen, weil zu klären ist, ob ein übersprungener Layer im
+  Ergebnispanel erscheinen soll.
+
 - **Der Agent hält sich nicht zuverlässig an den Prompt.** Er hat Feldnamen
   erfunden, Kategorien übergangen, Layer ausgelassen und lagebezogen statt
   grundsätzlich begründet. Alles, was stimmen muss, ist deshalb im Code

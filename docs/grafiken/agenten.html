@@ -1,0 +1,122 @@
+<style>
+  html, body { margin: 0; padding: 0; background: #f5f7fa; }
+  body { width: 1240px; height: 790px; color: #1e242b;
+         font-family: "Segoe UI", "Avenir Next", system-ui, sans-serif; }
+  svg { display: block; width: 1240px; height: 790px; }
+</style>
+
+<svg viewBox="0 0 1240 790" role="img"
+     aria-label="Der Hauptagent als Säule links. Von ihm gehen orange Pfeile zu den fünf Subagenten mit dem, was er übergibt, und grüne Pfeile zurück mit dem, was er bekommt. Rechts steht, worin jeder Subagent liest.">
+  <defs>
+    <marker id="hin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <polygon points="0,1 10,5 0,9" fill="#b8700f"/>
+    </marker>
+    <marker id="rueck" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <polygon points="0,1 10,5 0,9" fill="#1f7a63"/>
+    </marker>
+    <marker id="quelle" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <polygon points="0,1 10,5 0,9" fill="#8a8f96"/>
+    </marker>
+  </defs>
+
+  <!-- ── Eingang ────────────────────────────────────────────────────── -->
+  <text x="130" y="36" font-size="13" font-weight="700" text-anchor="middle" fill="#2b4c7e">NUTZEREINGABE</text>
+  <text x="130" y="56" font-size="13" text-anchor="middle" fill="#4b5560">Vorhabenart · Geometrie · Kommentar</text>
+  <line x1="130" y1="68" x2="130" y2="94" stroke="#b8700f" stroke-width="2.2" marker-end="url(#hin)"/>
+
+  <!-- ── Hauptagent als Säule ───────────────────────────────────────── -->
+  <rect x="40" y="98" width="180" height="606" rx="10" fill="#b8700f" fill-opacity="0.12" stroke="#b8700f" stroke-width="2.4"/>
+  <text x="130" y="130" font-size="20" font-weight="700" text-anchor="middle" fill="#1e242b">Hauptagent</text>
+  <line x1="58" y1="144" x2="202" y2="144" stroke="#b8700f" stroke-opacity="0.45" stroke-width="1.2"/>
+  <text x="130" y="168" font-size="13.5" text-anchor="middle" fill="#4b5560">Er ruft auf,</text>
+  <text x="130" y="187" font-size="13.5" text-anchor="middle" fill="#4b5560">bekommt zurück,</text>
+  <text x="130" y="206" font-size="13.5" text-anchor="middle" fill="#4b5560">ruft das Nächste auf.</text>
+  <text x="130" y="248" font-size="13.5" font-weight="700" text-anchor="middle" fill="#1e242b">Kein Subagent</text>
+  <text x="130" y="267" font-size="13.5" font-weight="700" text-anchor="middle" fill="#1e242b">spricht mit einem</text>
+  <text x="130" y="286" font-size="13.5" font-weight="700" text-anchor="middle" fill="#1e242b">anderen.</text>
+  <line x1="58" y1="640" x2="202" y2="640" stroke="#b8700f" stroke-opacity="0.45" stroke-width="1.2"/>
+  <text x="130" y="664" font-size="13.5" font-weight="700" text-anchor="middle" fill="#1f7a63">Ergebnis</text>
+  <text x="130" y="684" font-size="12.5" text-anchor="middle" fill="#4b5560">Panel · Karte · PDF</text>
+
+  <!-- Spaltenköpfe -->
+  <text x="400" y="118" font-size="11" font-weight="700" letter-spacing="1.5" text-anchor="middle" fill="#b8700f">ÜBERGIBT ▸</text>
+  <text x="400" y="134" font-size="11" font-weight="700" letter-spacing="1.5" text-anchor="middle" fill="#1f7a63">◂ BEKOMMT ZURÜCK</text>
+  <text x="725" y="126" font-size="11" font-weight="700" letter-spacing="1.5" text-anchor="middle" fill="#2b4c7e">SUBAGENT</text>
+  <text x="1030" y="126" font-size="11" font-weight="700" letter-spacing="1.5" text-anchor="middle" fill="#2b4c7e">LIEST IN</text>
+
+  <!-- ── 1 · Belange ────────────────────────────────────────────────── -->
+  <text x="400" y="164" font-size="13.5" font-weight="600" text-anchor="middle" fill="#b8700f">das Vorhaben</text>
+  <line x1="226" y1="172" x2="574" y2="172" stroke="#b8700f" stroke-width="1.8" marker-end="url(#hin)"/>
+  <text x="400" y="204" font-size="13.5" font-weight="600" text-anchor="middle" fill="#1f7a63">acht Themen, je mit Fundstelle</text>
+  <line x1="574" y1="212" x2="226" y2="212" stroke="#1f7a63" stroke-width="1.8" marker-end="url(#rueck)"/>
+
+  <rect x="580" y="150" width="290" height="84" rx="8" fill="#c98a1e" fill-opacity="0.14" stroke="#c98a1e" stroke-width="1.8"/>
+  <text x="600" y="182" font-size="18" font-weight="700" fill="#1e242b">1 · BelangeAgent</text>
+  <text x="600" y="206" font-size="13.5" fill="#4b5560">Welche Themen sind zu prüfen?</text>
+  <line x1="876" y1="192" x2="894" y2="192" stroke="#8a8f96" stroke-width="1.5" marker-end="url(#quelle)"/>
+  <rect x="900" y="160" width="260" height="64" rx="8" fill="#8a6d3b" fill-opacity="0.14" stroke="#8a6d3b" stroke-width="1.6"/>
+  <text x="920" y="188" font-size="15.5" font-weight="700" fill="#1e242b">Gesetze</text>
+  <text x="920" y="209" font-size="12.5" fill="#4b5560">21 Dokumente</text>
+
+  <!-- ── 2 + 3 · Regionalplan und Gesetz ────────────────────────────── -->
+  <text x="400" y="322" font-size="13.5" font-weight="600" text-anchor="middle" fill="#b8700f">ein Thema</text>
+  <line x1="226" y1="330" x2="574" y2="330" stroke="#b8700f" stroke-width="1.8" marker-end="url(#hin)"/>
+  <text x="400" y="382" font-size="13.5" font-weight="600" text-anchor="middle" fill="#1f7a63">Passagen im Wortlaut,</text>
+  <text x="400" y="399" font-size="13.5" font-weight="600" text-anchor="middle" fill="#1f7a63">Einschätzung, Radiusvorschlag</text>
+  <line x1="574" y1="410" x2="226" y2="410" stroke="#1f7a63" stroke-width="1.8" marker-end="url(#rueck)"/>
+
+  <path d="M 566 288 L 556 288 L 556 436 L 566 436" fill="none" stroke="#2b4c7e" stroke-width="1.5"/>
+  <text transform="rotate(-90 543 362)" x="543" y="362" font-size="11.5" font-weight="700" text-anchor="middle" fill="#2b4c7e">achtmal</text>
+
+  <rect x="580" y="288" width="290" height="66" rx="8" fill="#c98a1e" fill-opacity="0.14" stroke="#c98a1e" stroke-width="1.8"/>
+  <text x="600" y="316" font-size="17" font-weight="700" fill="#1e242b">2 · RegionalplanAgent</text>
+  <text x="600" y="338" font-size="13" fill="#4b5560">Was legt der geltende Plan fest?</text>
+  <line x1="876" y1="321" x2="894" y2="321" stroke="#8a8f96" stroke-width="1.5" marker-end="url(#quelle)"/>
+  <rect x="900" y="290" width="260" height="62" rx="8" fill="#8a6d3b" fill-opacity="0.14" stroke="#8a6d3b" stroke-width="1.6"/>
+  <text x="920" y="316" font-size="15.5" font-weight="700" fill="#1e242b">Regionalpläne</text>
+  <text x="920" y="336" font-size="12.5" fill="#4b5560">7 Planungsregionen</text>
+
+  <text x="725" y="375" font-size="12" font-weight="700" text-anchor="middle" fill="#2b4c7e">beide gleichzeitig</text>
+
+  <rect x="580" y="384" width="290" height="66" rx="8" fill="#c98a1e" fill-opacity="0.14" stroke="#c98a1e" stroke-width="1.8"/>
+  <text x="600" y="412" font-size="17" font-weight="700" fill="#1e242b">3 · GesetzAgent</text>
+  <text x="600" y="434" font-size="13" fill="#4b5560">Was sagt das Fachrecht dazu?</text>
+  <line x1="876" y1="417" x2="894" y2="417" stroke="#8a8f96" stroke-width="1.5" marker-end="url(#quelle)"/>
+  <rect x="900" y="386" width="260" height="62" rx="8" fill="#8a6d3b" fill-opacity="0.14" stroke="#8a6d3b" stroke-width="1.6"/>
+  <text x="920" y="412" font-size="15.5" font-weight="700" fill="#1e242b">Gesetze</text>
+  <text x="920" y="432" font-size="12.5" fill="#4b5560">dieselben 21 Dokumente</text>
+
+  <!-- ── 4 · Layer ──────────────────────────────────────────────────── -->
+  <text x="400" y="506" font-size="13.5" font-weight="600" text-anchor="middle" fill="#b8700f">ein Thema mit Untersuchungsradius</text>
+  <line x1="226" y1="514" x2="574" y2="514" stroke="#b8700f" stroke-width="1.8" marker-end="url(#hin)"/>
+  <text x="400" y="546" font-size="13.5" font-weight="600" text-anchor="middle" fill="#1f7a63">Anzahl und Maß je Layer</text>
+  <line x1="574" y1="554" x2="226" y2="554" stroke="#1f7a63" stroke-width="1.8" marker-end="url(#rueck)"/>
+
+  <path d="M 566 492 L 556 492 L 556 576 L 566 576" fill="none" stroke="#2b4c7e" stroke-width="1.5"/>
+  <text transform="rotate(-90 543 534)" x="543" y="534" font-size="11.5" font-weight="700" text-anchor="middle" fill="#2b4c7e">achtmal</text>
+
+  <rect x="580" y="492" width="290" height="84" rx="8" fill="#c98a1e" fill-opacity="0.14" stroke="#c98a1e" stroke-width="1.8"/>
+  <text x="600" y="524" font-size="18" font-weight="700" fill="#1e242b">4 · LayerAgent</text>
+  <text x="600" y="548" font-size="13.5" fill="#4b5560">Welche Kartendaten passen?</text>
+  <line x1="876" y1="534" x2="894" y2="534" stroke="#8a8f96" stroke-width="1.5" marker-end="url(#quelle)"/>
+  <rect x="900" y="502" width="260" height="64" rx="8" fill="#1f6fb8" fill-opacity="0.12" stroke="#1f6fb8" stroke-width="1.6"/>
+  <text x="920" y="530" font-size="15.5" font-weight="700" fill="#1e242b">Kartendaten</text>
+  <text x="920" y="551" font-size="12.5" fill="#4b5560">Layer der Webmap</text>
+
+  <!-- ── 5 · Bericht ────────────────────────────────────────────────── -->
+  <text x="400" y="646" font-size="13.5" font-weight="600" text-anchor="middle" fill="#b8700f">alle Befunde als Stichpunkte</text>
+  <line x1="226" y1="654" x2="574" y2="654" stroke="#b8700f" stroke-width="1.8" marker-end="url(#hin)"/>
+  <text x="400" y="686" font-size="13.5" font-weight="600" text-anchor="middle" fill="#1f7a63">drei bis sechs Sätze</text>
+  <line x1="574" y1="694" x2="226" y2="694" stroke="#1f7a63" stroke-width="1.8" marker-end="url(#rueck)"/>
+
+  <rect x="580" y="632" width="290" height="84" rx="8" fill="#c98a1e" fill-opacity="0.14" stroke="#c98a1e" stroke-width="1.8"/>
+  <text x="600" y="664" font-size="18" font-weight="700" fill="#1e242b">5 · BerichtAgent</text>
+  <text x="600" y="688" font-size="13.5" fill="#4b5560">Formuliert die Zusammenfassung</text>
+  <line x1="876" y1="674" x2="894" y2="674" stroke="#8a8f96" stroke-width="1.5" marker-end="url(#quelle)"/>
+  <rect x="900" y="642" width="260" height="64" rx="8" fill="none" stroke="#b9bfc7" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <text x="920" y="670" font-size="15.5" font-weight="700" fill="#4b5560">keine Quelle</text>
+  <text x="920" y="691" font-size="12.5" fill="#4b5560">er schlägt nirgends nach</text>
+
+  <!-- Fußnote -->
+  <text x="40" y="762" font-size="13" fill="#4b5560">Orange hinaus, grün zurück — jeder Austausch läuft über den Hauptagenten. Die Subagenten kennen einander nicht.</text>
+</svg>

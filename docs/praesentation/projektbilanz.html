@@ -1,0 +1,924 @@
+<title>Projektbilanz Erstscreening</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Nunito+Sans:wght@400;600;700&display=swap">
+
+<style>
+  /* Layout: einspaltiges Langdokument, Messwerte als eigene Spur in den
+     Befundblöcken. Farben aus dem Design-System der Anwendung (style.css):
+     gedecktes Stahlblau auf blaustichigem Papiergrau. */
+  :root {
+    --papier: #eef0f3;
+    --blatt: #ffffff;
+    --blatt-2: #f6f7f9;
+    --tinte: #1e242b;
+    --leise: #5b636e;
+    --linie: #d9dde3;
+    --stahl: #2b4c7e;
+    --stahl-weich: #e7edf5;
+    --gruen: #16794a;
+    --gruen-weich: #e2f1ea;
+    --bernstein: #a4600a;
+    --bernstein-weich: #f8eedd;
+    --rot: #b4232f;
+
+    --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+    --sans: "Nunito Sans", "Avenir Next", Avenir, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --papier: #14181d;
+      --blatt: #1c2127;
+      --blatt-2: #222830;
+      --tinte: #e4e8ed;
+      --leise: #98a2ae;
+      --linie: #323a44;
+      --stahl: #7fa6d8;
+      --stahl-weich: #1a2634;
+      --gruen: #5cc295;
+      --gruen-weich: #122a21;
+      --bernstein: #d8a44f;
+      --bernstein-weich: #2d2416;
+      --rot: #e4737d;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --papier: #14181d;
+    --blatt: #1c2127;
+    --blatt-2: #222830;
+    --tinte: #e4e8ed;
+    --leise: #98a2ae;
+    --linie: #323a44;
+    --stahl: #7fa6d8;
+    --stahl-weich: #1a2634;
+    --gruen: #5cc295;
+    --gruen-weich: #122a21;
+    --bernstein: #d8a44f;
+    --bernstein-weich: #2d2416;
+    --rot: #e4737d;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--papier);
+    color: var(--tinte);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .bogen {
+    max-width: 820px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0 96px;
+  }
+
+  /* ── Kopf ───────────────────────────────────────────────────────────── */
+  header { display: grid; gap: 14px; padding-block: 56px 30px; border-bottom: 2px solid var(--stahl); }
+  .kennung {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--leise);
+  }
+  h1 {
+    font-family: var(--serif); font-weight: 700;
+    font-size: clamp(32px, 6vw, 50px); line-height: 1.04;
+    letter-spacing: -0.02em; margin: 0; text-wrap: balance;
+  }
+  .vorspann { margin: 0; max-width: 60ch; font-size: 18px; color: var(--leise); }
+
+  /* ── Abschnitte ─────────────────────────────────────────────────────── */
+  section { padding-block: 44px 0; }
+  h2 {
+    font-family: var(--serif); font-weight: 700;
+    font-size: clamp(23px, 3.4vw, 29px); line-height: 1.18;
+    letter-spacing: -0.015em; margin: 0 0 4px; text-wrap: balance;
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--stahl); margin: 0 0 10px; font-weight: 600;
+  }
+  h3 {
+    font-family: var(--serif); font-weight: 600; font-size: 19px;
+    line-height: 1.3; margin: 0 0 8px; text-wrap: balance;
+  }
+  h4 {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
+    margin: 26px 0 6px; color: var(--stahl);
+  }
+  p { max-width: 66ch; margin: 0 0 14px; }
+  .fuehrung { max-width: 62ch; color: var(--leise); margin: 0 0 22px; }
+  ul, ol { max-width: 64ch; padding-left: 1.25em; margin: 0 0 16px; }
+  li { margin-bottom: 8px; }
+  strong { font-weight: 700; }
+  em { font-style: italic; }
+  code {
+    font-family: var(--mono); font-size: 0.85em;
+    background: var(--blatt-2); border: 1px solid var(--linie);
+    border-radius: 4px; padding: 0.08em 0.34em;
+  }
+
+  /* ── Befund: angenommen / gemessen / folge ──────────────────────────── */
+  .befund {
+    background: var(--blatt); border: 1px solid var(--linie);
+    border-left: 3px solid var(--stahl); border-radius: 0 10px 10px 0;
+    padding: 18px 22px; margin: 0 0 14px;
+  }
+  .befund h3 { margin-bottom: 12px; }
+  .befund dl { display: grid; gap: 10px; margin: 0; }
+  .befund dl > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 4px 16px; }
+  .befund dt {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--leise); padding-top: 4px;
+  }
+  .befund dd { margin: 0; font-size: 15px; }
+  .befund dd:last-child { color: var(--tinte); }
+  .befund dl > div:nth-child(2) dt { color: var(--stahl); }
+  .befund dl > div:nth-child(3) dt { color: var(--gruen); }
+  .messwert { font-weight: 700; font-variant-numeric: tabular-nums; }
+  @media (max-width: 560px) {
+    .befund dl > div { grid-template-columns: 1fr; gap: 2px; }
+    .befund dt { padding-top: 0; }
+  }
+
+  /* ── Tabellen ───────────────────────────────────────────────────────── */
+  .tafel {
+    overflow-x: auto; margin: 0 0 20px;
+    border: 1px solid var(--linie); border-radius: 10px; background: var(--blatt);
+  }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 14px; vertical-align: top; border-bottom: 1px solid var(--linie); }
+  thead th {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--leise);
+    background: var(--blatt-2); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.k { font-family: var(--mono); font-size: 12.5px; }
+  td.z { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ── Kernsatz ───────────────────────────────────────────────────────── */
+  .kernsatz {
+    background: var(--stahl-weich); border-radius: 10px;
+    padding: 20px 24px; margin: 0 0 22px;
+  }
+  .kernsatz p { margin: 0; max-width: none; font-family: var(--serif); font-size: 19px; line-height: 1.45; }
+  .kernsatz p + p { margin-top: 10px; }
+
+  .merke {
+    background: var(--blatt); border: 1px solid var(--linie);
+    border-radius: 10px; padding: 16px 20px; margin: 0 0 18px;
+  }
+  .merke p { margin: 0; max-width: none; font-size: 15px; }
+  .merke p + p { margin-top: 9px; }
+
+  /* ── Kette ──────────────────────────────────────────────────────────── */
+  .kette { display: grid; gap: 0; margin: 0 0 22px; counter-reset: schritt; }
+  .glied {
+    display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px;
+    padding: 12px 0; border-bottom: 1px solid var(--linie);
+  }
+  .glied:last-child { border-bottom: 0; }
+  .glied::before {
+    counter-increment: schritt; content: counter(schritt, decimal-leading-zero);
+    font-family: var(--mono); font-size: 11px; color: var(--stahl);
+    font-weight: 600; padding-top: 4px;
+  }
+  .glied b { display: block; font-size: 15.5px; }
+  .glied span { display: block; font-size: 14px; color: var(--leise); }
+  .glied .wer {
+    font-family: var(--mono); font-size: 10.5px; color: var(--stahl);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Marken ─────────────────────────────────────────────────────────── */
+  .marke {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 4px; white-space: nowrap;
+  }
+  .m-ki { color: var(--bernstein); background: var(--bernstein-weich); }
+  .m-code { color: var(--stahl); background: var(--stahl-weich); }
+  .m-ja { color: var(--gruen); background: var(--gruen-weich); }
+
+  /* ── Zahlenspiegel ──────────────────────────────────────────────────── */
+  .spiegel {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--linie); border: 1px solid var(--linie);
+    border-radius: 10px; overflow: hidden; margin: 0 0 22px;
+  }
+  .spiegel div { background: var(--blatt); padding: 14px 16px; }
+  .spiegel b {
+    display: block; font-family: var(--serif); font-size: 25px; font-weight: 700;
+    line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+  }
+  .spiegel span { display: block; font-size: 12.5px; color: var(--leise); margin-top: 3px; }
+
+  footer {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--linie);
+    color: var(--leise); font-size: 13.5px;
+  }
+  footer p { max-width: 70ch; }
+  a { color: var(--stahl); }
+  :focus-visible { outline: 2px solid var(--stahl); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="bogen">
+
+<header>
+  <div class="kennung">Projektbilanz · Stand 14.10.2026</div>
+  <h1>Räumliches Erstscreening</h1>
+  <p class="vorspann">
+    Was die Anwendung tut, wie sie gebaut ist, und was beim Bauen messbar
+    schiefgegangen ist. Der dritte Teil ist der nützlichste.
+  </p>
+</header>
+
+<section>
+  <p class="eyebrow">Das Vorhaben</p>
+  <h2>Worum es geht</h2>
+
+  <p>
+    Eine Landes- oder Raumordnungsbehörde bekommt kurzfristig ein
+    raumbedeutsames Großvorhaben auf den Tisch — eine Windenergieanlage, ein
+    Gewerbegebiet, eine Trasse. Drei Fragen müssen schnell beantwortet sein:
+    <strong>Welcher Raum ist betroffen? Welche Themen sind fachlich relevant?
+    Welche Daten braucht die vertiefte Prüfung?</strong>
+  </p>
+
+  <p>
+    Der Nutzer wählt eine von sechs Vorhabenarten, zeichnet Punkt, Linie oder
+    Fläche in die Karte und startet. Die Anwendung arbeitet die Kette dann
+    sichtbar ab — jeder Schritt erscheint im Ablaufpanel, jede Fundstelle steht
+    im Wortlaut im Ergebnis.
+  </p>
+
+  <div class="kernsatz">
+    <p>
+      Die KI bewertet <strong>nicht</strong> die Raumverträglichkeit, die
+      Zulässigkeit oder ob ein Ziel der Raumordnung entgegensteht.
+    </p>
+    <p>
+      Sie stellt fest, was im Untersuchungsraum liegt, gibt Ziele der Raumordnung
+      im Wortlaut wieder und benennt, was vertieft zu betrachten wäre.
+    </p>
+  </div>
+
+  <p>
+    Diese Grenze wird in der Demo offensiv gezeigt. Bei diesem Publikum schafft
+    sie mehr Vertrauen als eine überzogene Agenten-Demo — und sie ist der Grund,
+    warum an mehreren Stellen lieber „das wissen wir nicht" im Ergebnis steht
+    als eine plausible Zahl.
+  </p>
+
+  <h4>Die Datenbotschaft</h4>
+  <p>
+    Nicht „basemap.de ist die KI-Datenbasis", sondern: für diesen Showcase wurde
+    ein kuratierter, standardisierter Geodatenbestand aufgebaut. Die Kernaussage
+    dahinter — <em>KI braucht nicht viele Daten, sondern zugängliche,
+    strukturierte, verlässliche und interpretierbare Daten</em> — hat sich im
+    Bau mehrfach bestätigt, meistens schmerzhaft.
+  </p>
+</section>
+
+<section>
+  <p class="eyebrow">Der Ablauf</p>
+  <h2>Zehn Schritte, von der Zeichnung zum Ergebnis</h2>
+  <p class="fuehrung">
+    Die Reihenfolge entscheidet der Hauptagent. Was in jedem Schritt passiert,
+    steht fest.
+  </p>
+
+  <div class="kette">
+    <div class="glied">
+      <div>
+        <b>Vorhabenkontext holen</b>
+        <span class="wer">holeVorhabenKontext · Code</span>
+        <span>Vorhabenart, Geometrietyp, Maße, Nutzerkommentar — aus dem Zustand der Anwendung, nicht aus dem Text gelesen.</span>
+      </div>
+    </div>
+    <div class="glied">
+      <div>
+        <b>Planungsregion bestimmen</b>
+        <span class="wer">bestimmeRegion · Code</span>
+        <span>Verschnitt mit den Gemeindegrenzen, aus dem AGS der Kreis, daraus deterministisch die Region und der geltende Regionalplan. Liegt das Vorhaben außerhalb NRW, bricht der Schritt mit klarer Meldung ab.</span>
+      </div>
+    </div>
+    <div class="glied">
+      <div>
+        <b>Belange klären</b>
+        <span class="wer">klaereBelange · BelangeAgent</span>
+        <span>Welche öffentlichen Belange kann ein Vorhaben dieser Art berühren? Gelesen in § 35 Abs. 3 BauGB und in acht Ankernormen, nicht aus eigenem Wissen gebildet.</span>
+      </div>
+    </div>
+    <div class="glied">
+      <div>
+        <b>Recherchieren, je Kategorie</b>
+        <span class="wer">recherchiere · RegionalplanAgent + GesetzAgent</span>
+        <span>Beide laufen gleichzeitig, jeder in seinem Korpus. Zurück kommen RELEVANT, ZITAT, KERN, RADIUS.</span>
+      </div>
+    </div>
+    <div class="glied">
+      <div>
+        <b>Relevanz melden</b>
+        <span class="wer">meldeRelevanz / meldeNichtRelevant · Code</span>
+        <span>Je Kategorie genau eine der beiden Meldungen. Bei Relevanz entsteht hier die Untersuchungszone — ein geodätischer Puffer.</span>
+      </div>
+    </div>
+    <div class="glied">
+      <div>
+        <b>Layer finden und prüfen</b>
+        <span class="wer">pruefeKategorie · LayerAgent</span>
+        <span>Je Kategorie ein eigener Subagentenlauf: Layerliste, Felder und Codes je Layer, dann die Abfrage.</span>
+      </div>
+    </div>
+    <div class="glied">
+      <div>
+        <b>Abfragen und verschneiden</b>
+        <span class="wer">queryLayer · Code</span>
+        <span>Exakte Anzahl am Dienst, Geometrien seitenweise, Zuschnitt auf die Zone, dann erst messen. Aufschlüsselung nach Attributwert.</span>
+      </div>
+    </div>
+    <div class="glied">
+      <div>
+        <b>Nachfassen</b>
+        <span class="wer">app.js · Code</span>
+        <span>Fehlende Meldungen, übergangene Layer, unplausibel wenige Kategorien — erkannt im Code, korrigiert vom Modell. Bis zu drei Runden, Abbruch sobald eine Runde nichts mehr schließt.</span>
+      </div>
+    </div>
+    <div class="glied">
+      <div>
+        <b>Abschlusstext formulieren</b>
+        <span class="wer">fasseZusammen · BerichtAgent</span>
+        <span>Der Hauptagent übergibt die Befunde als Stichpunkte. Der Subagent macht daraus drei bis sechs Sätze — und jede Ziffernfolge darin wird gegen die Stichpunkte geprüft.</span>
+      </div>
+    </div>
+    <div class="glied">
+      <div>
+        <b>Darstellen</b>
+        <span class="wer">analyse.js · karte.js · Code</span>
+        <span>Alle Layer aus, dann nur die gefundenen Objekte — gefiltert über ihre ObjectIDs. Panel, Ringdiagramme je Layer, PDF-Export.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Die Besetzung</p>
+  <h2>Ein Hauptagent, fünf Subagenten</h2>
+  <p class="fuehrung">
+    Der Hauptagent arbeitet nicht selbst. Er entscheidet, welches Werkzeug mit
+    welchen Argumenten aufgerufen wird — mehr nicht.
+  </p>
+
+  <div class="tafel">
+    <table>
+      <thead>
+        <tr><th>Wer</th><th>Werkzeug</th><th>Aufgabe</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="k">ScreeningAgent</td>
+          <td class="k">—</td>
+          <td>Orchestriert. Hängt an einer im UI unsichtbaren <code>&lt;arcgis-assistant&gt;</code>, gesteuert nur über <code>submitMessage()</code>. Hat <strong>fünf</strong> Werkzeuge.</td>
+        </tr>
+        <tr>
+          <td class="k">BelangeAgent <span class="marke m-ki">KI</span></td>
+          <td class="k">klaereBelange</td>
+          <td>Liest nach, welche Belange zu prüfen sind. Die Vollständigkeit über alle acht Kategorien prüft der Code und fasst einmal nach.</td>
+        </tr>
+        <tr>
+          <td class="k">RegionalplanAgent <span class="marke m-ki">KI</span></td>
+          <td class="k">recherchiere</td>
+          <td>Ziele und Grundsätze des geltenden Plans — einer von sieben.</td>
+        </tr>
+        <tr>
+          <td class="k">GesetzAgent <span class="marke m-ki">KI</span></td>
+          <td class="k">recherchiere</td>
+          <td>Einschlägige Normen im Gesetzeskorpus, parallel zum Regionalplan-Agenten.</td>
+        </tr>
+        <tr>
+          <td class="k">LayerAgent <span class="marke m-ki">KI</span></td>
+          <td class="k">pruefeKategorie</td>
+          <td>Der einzige Subagent mit eigenen Werkzeugen: <code>beschreibeLayer</code> und <code>queryLayer</code>. <code>recursionLimit</code> 40.</td>
+        </tr>
+        <tr>
+          <td class="k">BerichtAgent <span class="marke m-ki">KI</span></td>
+          <td class="k">fasseZusammen</td>
+          <td>Hat <strong>keine</strong> Werkzeuge. Er kann nichts nachschlagen und nichts rechnen — genau das ist der Punkt.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Warum Subagenten statt Werkzeuge am Hauptagenten</h4>
+  <p>
+    Wegen des Kontexts. Eine RAG-Antwort umfasst mehrere Gesetzespassagen; eine
+    Layerbeschreibung bringt Feldlisten und Domänencodes mit. Liefe das im
+    Hauptagenten, landete jedes davon in seiner Nachrichtenhistorie — und die
+    geht bei <em>jeder</em> weiteren Modellrunde erneut mit. Ein ungedeckelter
+    Layer mit langen Domänenlisten hat einen Lauf gekippt. Im Subagenten bleibt
+    das in dessen Kontext; zurück kommen wenige Zeilen. Der Volltext steht
+    trotzdem im Ergebnis, weil die Werkzeuge ihn direkt in den Speicher
+    schreiben.
+  </p>
+
+  <h4>Warum Regionalplan und Gesetz getrennt sind</h4>
+  <p>
+    Sie beantworten verschiedene Fragen. Ein <strong>Regionalplan regelt
+    Gebiete</strong> — „Vorranggebiet für den Schutz der Natur". Ein
+    <strong>Fachgesetz regelt Schutzgüter</strong> — „Eingriffe in Natur und
+    Landschaft". Wer beides in einem Auftrag fragt, bekommt Vermischung; wer es
+    trennt, zwei prüfbare Aussagen mit je eigener Fundstelle.
+  </p>
+</section>
+
+<section>
+  <p class="eyebrow">Die Arbeitsteilung</p>
+  <h2>Was das Modell entscheidet, was feststeht</h2>
+
+  <div class="kernsatz">
+    <p>
+      Das Modell entscheidet, <strong>was gefragt wird</strong>. Der Code
+      liefert, <strong>was gilt</strong>.
+    </p>
+  </div>
+
+  <p>
+    Deshalb kann ein Prompt-Ausrutscher das Ergebnis unvollständig machen, aber
+    nicht falsch. Die Trennung ist nicht theoretisch — sie ist das Ergebnis
+    mehrerer Läufe, in denen das Modell Feldnamen erfunden, Kategorien
+    übergangen und Layer ausgelassen hat.
+  </p>
+
+  <div class="tafel">
+    <table>
+      <thead><tr><th>Entscheidet das Modell</th><th>Steht im Code fest</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Reihenfolge der Aufrufe</td>
+          <td>Gemeinde → Kreis → Planungsregion → geltender Plan</td>
+        </tr>
+        <tr>
+          <td>Welche Kategorien relevant sind</td>
+          <td>Dass ohne Relevanzmeldung keine Kartenabfrage läuft</td>
+        </tr>
+        <tr>
+          <td>Welcher Radius gemeldet wird</td>
+          <td>Ob die Radiuszahl in den Passagen steht</td>
+        </tr>
+        <tr>
+          <td>Welche Layer und welcher Filter</td>
+          <td>Ob die Feldnamen im Filter existieren</td>
+        </tr>
+        <tr>
+          <td>Die Formulierung des Abschlusstexts</td>
+          <td>Ob jede Zahl darin in den Befunden steht</td>
+        </tr>
+        <tr>
+          <td>—</td>
+          <td>Zählen, Verschneiden, Messen, Darstellen</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="merke">
+    <p>
+      <strong>Die Regel, die sich daraus ergeben hat:</strong> Neue
+      Anforderungen an das Modell gehören ins Werkzeug, nicht in den Prompt.
+      Erkennung deterministisch, Korrektur durch das Modell.
+    </p>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Die Wissensbasis</p>
+  <h2>Das RAG: 49 amtliche PDF, zwei Korpora</h2>
+
+  <div class="spiegel">
+    <div><b>21</b><span>Gesetzes-PDF · 12 MB</span></div>
+    <div><b>28</b><span>Regionalplan-Dateien · 481 MB</span></div>
+    <div><b>5.801</b><span>Chunks in der ChromaDB</span></div>
+    <div><b>7</b><span>Planungsregionen</span></div>
+  </div>
+
+  <p>
+    Das Backend ist <strong>retrieval-only</strong>: Python, FastAPI, Port 8000.
+    Es sucht und gibt Text zurück. Es enthält kein Modell, das irgendetwas
+    schlussfolgert — das passiert ausschließlich in den Agenten im Browser.
+  </p>
+
+  <h4>Wer was tut</h4>
+  <div class="tafel">
+    <table>
+      <thead><tr><th>Baustein</th><th>Tut</th><th>Tut nicht</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="k">Ollama</td>
+          <td>Lässt <code>embeddinggemma</code> laufen, Port 11434. Übersetzt Text in Zahlen, in denen Nähe Ähnlichkeit bedeutet. Zweimal im Einsatz: beim Aufbau für jeden Chunk, bei jeder Anfrage für die Frage.</td>
+          <td><strong>Erzeugt keinen Text.</strong></td>
+        </tr>
+        <tr>
+          <td class="k">ChromaDB</td>
+          <td>Hält je Chunk den Vektor, den Volltext und die Metadaten. Einmal beschrieben, bei jeder Anfrage zweimal gelesen — für die Vektorsuche und für den Volltext, aus dem BM25 seinen Index baut.</td>
+          <td><strong>Bewertet nichts.</strong></td>
+        </tr>
+        <tr>
+          <td class="k">Die PDF</td>
+          <td>Werden einmal zerlegt. Im Betrieb wird keine mehr gelesen.</td>
+          <td>Gehen nie ins Modell. Dorthin gehen nur einzelne Passagen.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>Die hybride Suche, sieben Schritte</h4>
+  <ol>
+    <li><strong>Suchtext bauen</strong> — <code>wirkungsfrage()</code>, Belang zuerst, Vorhabentyp zuletzt.</li>
+    <li><strong>Frage einbetten</strong> — Ollama, mit <code>lru_cache</code>, weil die Suchtexte aus dem festen Katalog stammen.</li>
+    <li><strong>Vektorsuche</strong> — ChromaDB, 40 Kandidaten.</li>
+    <li><strong>Stichwortsuche</strong> — BM25 im Prozess, 40 Kandidaten. Die Tokenisierung trennt am <code>§</code> und behält Ziffern, damit „38" in „§ 38 WHG" ein Suchwort ist.</li>
+    <li><strong>Fusion</strong> — Reciprocal Rank Fusion, k=60. Verrechnet werden die Ränge, nicht die Punktzahlen.</li>
+    <li><strong>Abstinenzschwelle</strong> — unter 0,45 Ähnlichkeit kommt eine leere Liste.</li>
+    <li><strong>Dubletten raus</strong> — je Fundstelle ein Chunk.</li>
+  </ol>
+
+  <h4>Daneben: die Ankernormen, geholt statt gesucht</h4>
+  <p>
+    Für jede der acht Kategorien steht im Katalog die Norm, die den Tatbestand
+    trägt — § 39 LFoG NRW für die Waldumwandlung, § 9 DSchG NRW für das
+    Baudenkmal. Die wird über <code>col.get(where=…)</code> direkt geholt: ein
+    reiner Metadatenzugriff, kein Embedding, kein Rang, keine Schwelle. Sie
+    kommt zurück oder sie steht nicht im Korpus.
+  </p>
+</section>
+
+<section>
+  <p class="eyebrow">Erkenntnisse I</p>
+  <h2>Über Prompts und Code</h2>
+  <p class="fuehrung">
+    Jeder Befund unten ist gemessen, nicht vermutet. Die Zahlen stammen aus
+    echten Läufen oder aus Testreihen gegen das laufende System.
+  </p>
+
+  <article class="befund">
+    <h3>Zwei Wege zum selben Ziel sind keine Redundanz</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Ein Werkzeug <code>schreibeBericht</code> lässt den Subagenten formulieren und gibt den Text zurück, mit der Anweisung, ihn unverändert an <code>fasseZusammen</code> weiterzugeben. Ein Handschlag in zwei Schritten.</dd></div>
+      <div><dt>Gemessen</dt><dd>Im Lauf hat das Modell den ersten Schritt <span class="messwert">übersprungen</span> und direkt <code>fasseZusammen</code> gerufen. Der Abschlusstext kam vom Hauptagenten.</dd></div>
+      <div><dt>Folge</dt><dd><code>schreibeBericht</code> entfernt. <code>fasseZusammen</code> läuft selbst durch den Subagenten. Dieselbe Lehre beim LayerAgent: <code>beschreibeLayer</code> und <code>queryLayer</code> sind aus den Werkzeugen des Hauptagenten entfernt, nicht nur im Prompt abgeraten.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Die Relevanzfrage kippte dreimal</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Das Modell könne aus Plan und Gesetz ableiten, welche Belange ein Vorhaben berührt — man müsse es nur richtig fragen.</dd></div>
+      <div><dt>Gemessen</dt><dd>Drei Formulierungen, drei Ergebnisse: <span class="messwert">8 von 8</span> relevant, dann <span class="messwert">0 von 8</span>, dann genau <span class="messwert">eine</span> — ausgerechnet „Energie", weil eine Windenergieanlage nun einmal Energieinfrastruktur <em>ist</em>.</dd></div>
+      <div><dt>Folge</dt><dd>Der Denkfehler lag im Kriterium, nicht in der Formulierung. Ein Plan regelt Gebiete, ein Gesetz Schutzgüter — beide nennen den Vorhabentyp fast nie beim Namen. Wer eine vorhabentypbezogene Norm verlangt, findet systematisch nichts. Die Frage lautet heute: kann ein Vorhaben dieser Art den Belang räumlich oder funktional <em>berühren</em>? Die Abstufung läuft über den Radius, nicht über das Weglassen von Kategorien.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Der Prompt allein hält nichts</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Eine klare Anweisung im Systemprompt reicht, damit das Modell nur existierende Feldnamen verwendet und keine Kategorie auslässt.</dd></div>
+      <div><dt>Gemessen</dt><dd>Das Modell hat Feldnamen und Domänencodes frei erfunden; die Abfragen lieferten <span class="messwert">lautlos null</span> Treffer. In einem anderen Lauf recherchierte es alle acht Kategorien und meldete danach keine einzige.</dd></div>
+      <div><dt>Folge</dt><dd>Feldnamen werden gegen <code>layer.fields</code> geprüft. Null Treffer <em>mit</em> Filter lösen eine Gegenprobe <em>ohne</em> Filter aus; liegen dort Objekte, wird der Filter verworfen und ohne ihn gemessen. Fehlende Meldungen und übergangene Layer erkennt der Code und fasst nach.</dd></div>
+    </dl>
+  </article>
+</section>
+
+<section>
+  <p class="eyebrow">Erkenntnisse II</p>
+  <h2>Über Retrieval</h2>
+
+  <article class="befund">
+    <h3>Die Reihenfolge im Suchtext entscheidet über das Ergebnis</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Der Vorhabentyp gehört an den Anfang der Suchfrage — er ist schließlich der Anlass.</dd></div>
+      <div><dt>Gemessen</dt><dd>Er zog das Embedding vollständig zu sich. Für „Wasser" kam <span class="messwert">keine einzige Wassernorm</span> zurück, für „Wald" keine Forstnorm, für „Kulturlandschaft" kein Denkmalrecht. Mit dem Belang zuerst: LWG NRW und WHG, LFoG NRW fünfmal, DSchG NRW dreimal.</dd></div>
+      <div><dt>Folge</dt><dd><code>wirkungsfrage()</code> setzt den Belang nach vorn und den Vorhabentyp als kurzen „Anlass:" ans Ende. Im Regionalplan-Korpus dieselbe Richtung: statt vier Windenergie-Zielen kamen die Festlegungen zu stehenden Gewässern, Hochwasserschutz und Oberflächengewässern.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>§ 35 Abs. 3 BauGB ist kein Retrieval-Erfolg</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Die Suche findet den Belange-Katalog zuverlässig, also findet sie auch die übrigen einschlägigen Normen.</dd></div>
+      <div><dt>Gemessen</dt><dd>Von den acht Normen, die den Tatbestand je Kategorie tragen, fand die Suche <span class="messwert">genau eine</span> — § 35 BauGB selbst. Natur, Wasser, Wald, Verkehr, Energie, Landwirtschaft und Denkmalschutz fehlten alle.</dd></div>
+      <div><dt>Folge</dt><dd>§ 35 kommt zuverlässig, weil wir <em>wissen</em>, wo der Katalog steht — nicht weil die Suche gut ist. Dieselbe Kenntnis liegt für jede Kategorie im Katalog, also wird sie auch so benutzt: die Ankernorm wird über ihre Fundstelle geholt. Der Wald, der vorher systematisch aus dem Screening fiel, kommt seitdem als BELEGT mit § 39 LFoG NRW zurück.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Eine absolute Stichwortgrenze wäre genau falsch herum</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Ein hoher BM25-Wert bedeutet, dass der Treffer einschlägig ist — also kann man unterhalb einer Schwelle verwerfen.</dd></div>
+      <div><dt>Gemessen</dt><dd>„Waldumwandlung Genehmigung" (einschlägig) erreicht <span class="messwert">9,80</span> Punkte. „Bundesliga" (abwegig) erreicht <span class="messwert">12,44</span>. Die Punktzahl hängt an der Wortseltenheit, nicht an der Einschlägigkeit.</dd></div>
+      <div><dt>Folge</dt><dd>Die Abstinenzschwelle sitzt auf der Vektor-Ähnlichkeit, nicht auf BM25: Katalogfragen liegen zwischen 0,584 und 0,727, abwegige zwischen 0,000 und 0,181. Die Schwelle von 0,45 liegt mit Abstand dazwischen.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Der Korpus braucht echte Umlaute</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>ASCII-Umschrift in einem Suchtext ist eine Schreibweise, keine inhaltliche Änderung.</dd></div>
+      <div><dt>Gemessen</dt><dd>„Gewaesserrandstreifen" fällt unter die Abstinenzschwelle und liefert <span class="messwert">null</span> Treffer. „Gewässerrandstreifen" findet § 38 WHG auf <span class="messwert">Platz 1</span>, Ähnlichkeit 0,65.</dd></div>
+      <div><dt>Folge</dt><dd>Die Projektregel zu echten Umlauten in Strings und Suchtexten hat damit einen harten Grund, keinen ästhetischen. Bezeichner bleiben ASCII, weil sie gegen externe Daten matchen müssen.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Nicht das erste Textstück einer Norm nehmen</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Eine lange Norm liegt als mehrere Chunks vor; das erste enthält den Anfang des Normtexts.</dd></div>
+      <div><dt>Gemessen</dt><dd>Bei § 9 DSchG NRW ist das erste Stück ein Inhaltsverzeichnis-Artefakt aus <span class="messwert">269</span> Zeichen — „Abschnitt 3 / Denkmalbereiche / Herausgeber: …". Der Normtext steht im zweiten.</dd></div>
+      <div><dt>Folge</dt><dd>Gewählt wird das erste Stück mit <code>(1)</code> am Zeilenanfang, und der Auszug beginnt dort. Das schneidet bei § 39 LFoG NRW zugleich den Fußnotenblock weg. Die Auszugslänge liegt bei 760 Zeichen; bei 600 fiel die Fünf-Meter-Angabe in § 38 WHG heraus.</dd></div>
+    </dl>
+  </article>
+
+  <div class="merke">
+    <p>
+      <strong>Was die Hybridsuche nicht kann:</strong> eine schlechte Frage
+      retten. Mit dem alten Suchtext liefert sie für Kulturlandschaft weiterhin
+      kein Denkmalrecht. Sie macht robuster, ersetzt aber die richtige
+      Fragestellung nicht.
+    </p>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Erkenntnisse III</p>
+  <h2>Über eigene Prüfungen, die selbst falsch waren</h2>
+  <p class="fuehrung">
+    Die unangenehmste Gruppe. Jede dieser Prüfungen war gebaut worden, um einen
+    Fehler zu verhindern — und machte dabei selbst eine Falschaussage.
+  </p>
+
+  <article class="befund">
+    <h3>Die Radiusprüfung belegte auf Absatznummern</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Steht die gemeldete Meterzahl im Wortlaut einer abgerufenen Passage, ist der Radius belegt. Für runde Werte wurde zusätzlich die Kilometerform gesucht.</dd></div>
+      <div><dt>Gemessen</dt><dd>Die Kilometerform von 3000 ist eine nackte <span class="messwert">3</span> — und die steht in jedem Gesetzestext. Die Prüfung meldete <span class="messwert">5 von 8</span> Radien als belegt: auf „§ 35 Abs. <strong>3</strong> Nr. 1", auf „Absätzen 1 und <strong>2</strong>", auf „Absatz <strong>5</strong>".</dd></div>
+      <div><dt>Folge</dt><dd>Jeder Zweig verlangt jetzt eine Längeneinheit, passend zur Schreibweise: Ziffern und Zahlwörter nur mit m/Meter/Metern, die Kilometerform nur mit km/Kilometer/Kilometern. <span class="messwert">21</span> Fälle geprüft. Danach: 8 von 8 nicht belegt — der ehrliche Stand.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Die Zahl 429 im Antworttext ist kein Dienstfehler</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Taucht „429" in einer Antwort auf, hat der Modelldienst wegen Überlast abgewiesen.</dd></div>
+      <div><dt>Gemessen</dt><dd>Die Erkennung feuerte <span class="messwert">dreimal</span> in einem Lauf. „Vegetationsflächen: 429 Objekte" wurde als Dienstabweisung verworfen, ebenso Antworten mit einer Zahl wie „1.429" weiter hinten — die Wortgrenze trifft auch hinter einem Tausenderpunkt. Von sieben realistischen Fachantworten hielt das alte Muster <span class="messwert">sechs</span> für einen Dienstfehler.</dd></div>
+      <div><dt>Folge</dt><dd>Die Zahl zählt nur noch in einem Fehlerkontext (http, statuscode, code, error, fehler). <span class="messwert">17</span> Fälle geprüft. Gefährlicher war dieselbe Stelle im Hauptpfad: dort fällt die Fehlerprüfung ohne <code>error</code>-Feld auf die volle Antwort des Hauptagenten zurück — eine solche Zahl in der Zusammenfassung hätte den ganzen Lauf abgebrochen. Dass es nicht eintrat, war Zufall.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Ein Messfehler, der wie ein Modellfehler aussah</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Der BelangeAgent bricht nach fünf von acht Kategorien ab — so steht es im Log.</dd></div>
+      <div><dt>Gemessen</dt><dd>Die geloggte Antwort endet nach <span class="messwert">299</span> Zeichen. Der Schnitt in <code>console.info</code> lag bei <span class="messwert">300</span>. Nicht das Modell hatte aufgehört, sondern das Logging.</dd></div>
+      <div><dt>Folge</dt><dd>Die Längen sind jetzt je Aufruf einstellbar, und die Funktion <em>warnt</em>, wenn sie kürzt. Dass der Text an den Hauptagenten mit 600 Zeichen knapp genügte, war Glück — die Belange-Antwort bekommt heute 2000. Die Vollständigkeit wird trotzdem im Code geprüft.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Der Berichtstext braucht eine Zahlenprüfung</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Der Prompt verbietet dem BerichtAgent das Umrechnen, Runden und Addieren. Das reicht.</dd></div>
+      <div><dt>Gemessen</dt><dd>Reicht es nicht — siehe die drei Befunde darüber. Also wird geprüft: jede Ziffernfolge im formulierten Text muss in den übergebenen Fakten stehen. <span class="messwert">11</span> Fälle geprüft.</dd></div>
+      <div><dt>Folge</dt><dd>Rundet der Agent 277 auf „rund 280", fliegt der ganze Text heraus und die Stichpunkte bleiben stehen. Verglichen wird die Ziffernfolge ohne Trennzeichen, damit „3.000" und „3000" dieselbe Zahl sind. <strong>Bekannte Lücke:</strong> ein verrutschtes Dezimaltrennzeichen („173 km" statt „1,73 km") hat dieselbe Ziffernfolge und fällt nicht auf.</dd></div>
+    </dl>
+  </article>
+</section>
+
+<section>
+  <p class="eyebrow">Erkenntnisse IV</p>
+  <h2>Über das SDK</h2>
+
+  <article class="befund">
+    <h3><code>checkpointer: true</code> heißt „erbe", nicht „benutze"</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Ein Subagent lässt sich mit <code>agent.run()</code> direkt aufrufen.</dd></div>
+      <div><dt>Gemessen</dt><dd>LangGraph lehnt ab: <em>„checkpointer: true cannot be used for root graphs."</em> Die Agentenklasse setzt intern <code>checkpointer: true</code>, und das bedeutet in LangGraph „erbe den des übergeordneten Graphen". Unter dem Orchestrator gibt es diesen Elternteil; bei direktem Aufruf ist der Graph ein Wurzelgraph ohne Elternteil.</dd></div>
+      <div><dt>Folge</dt><dd>Der Graph wird selbst kompiliert, mit einem eigenen <code>MemorySaver</code>, und je Durchlauf mit eigener <code>thread_id</code> aufgerufen. Im Lauf bestätigt: <span class="messwert">17</span> erfolgreiche Subagentenläufe, null Fehler, der eingebaute Rückfall feuerte nie.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3><code>handler</code> ist Pflicht in einer Middleware, <code>hooks</code> ist optional</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Eine Middleware, die nur beobachten will, braucht nur den Hook.</dd></div>
+      <div><dt>Gemessen</dt><dd>In der Typdefinition steht <code>handler</code> ohne Fragezeichen und <code>hooks</code> mit. Ohne Handler bricht die Kette bei jedem Lauf mit <code>n.handler is not a function</code> ab — <span class="messwert">alle fünf</span> Subagenten fielen aus, während der Hauptagent weiterlief, weil der seinen Handler schon hatte.</dd></div>
+      <div><dt>Folge</dt><dd>Ein Durchreicher genügt: <code>handler: (req, next) =&gt; next(req)</code>. Die Arbeit macht der Hook. Allgemeiner: Namen und Pflichtfelder gegen die installierten Typdefinitionen prüfen, nicht gegen die Erinnerung.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Die <code>definitionExpression</code> hängt an jeder Kachelanfrage</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Ein Filter über ObjectIDs ist ein lokaler Vorgang — ein Deckel von 2.000 IDs ist großzügig, aber harmlos.</dd></div>
+      <div><dt>Gemessen</dt><dd>277 ObjectIDs sind rund <span class="messwert">1.900</span> Zeichen in der Anfrage-URL; 2.000 IDs wären über <span class="messwert">14.000</span>. Unmittelbar nach dem Setzen der Filter schlugen <span class="messwert">161</span> Kachelanfragen fehl.</dd></div>
+      <div><dt>Folge</dt><dd>Gefiltert wird über <code>FeatureFilter.objectIds</code> an der LayerView — clientseitig, die IDs gehen nie in eine URL. Im Lauf bestätigt: <span class="messwert">null</span> Kachelfehler. Die LayerViews werden einmal beim Kartenstart geholt, damit die Filterfunktion synchron bleibt; sonst könnte das Zurücknehmen nach dem Setzen landen und bei schnellen Klicks eine leere Karte hinterlassen.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Die alten Geometriefunktionen rechneten still falsch</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd><code>geometryEngine.geodesicArea</code> und Verwandte messen, was man ihnen gibt.</dd></div>
+      <div><dt>Gemessen</dt><dd>Sie sind seit 4.32 abgekündigt und arbeiten laut Typdefinition <em>„only with WGS84 and Web Mercator spatial references"</em>. Bei NRW-Daten in ETRS89/UTM32 lieferten sie stillschweigend falsche Zahlen. Dazu kam ein zweiter Fehler: ohne gesetztes <code>outSpatialReference</code> kommen die Features in der Projektion des Layers zurück, und der Verschnitt rechnet zwei Koordinatensysteme gegeneinander.</dd></div>
+      <div><dt>Folge</dt><dd>Gemessen wird mit den geodätischen Operatoren — <code>intersectionOperator</code>, dann <code>geodeticAreaOperator</code> bzw. <code>geodeticLengthOperator</code>, die Zone baut <code>geodesicBufferOperator</code>. Alle laufen lokal im Browser.</dd></div>
+    </dl>
+  </article>
+
+  <div class="merke">
+    <p>
+      <strong>Geoprocessing-Tools kommen in diesem Projekt nicht vor.</strong>
+      Ein GP-Tool läuft auf dem Server: Auftrag hin, warten, Ergebnis zurück,
+      Credits weg. Ein Geometrie-Operator rechnet im Browser auf Geometrien, die
+      schon im Speicher liegen. Eine Layerabfrage geht an den Dienst, ist aber
+      eine normale Abfrage, kein Tool. Wir benutzen die letzten beiden.
+    </p>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Erkenntnisse V</p>
+  <h2>Über die Daten</h2>
+
+  <article class="befund">
+    <h3>Der Titel eines Layers verrät nicht, was drin ist</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Waldflächen findet man in einem Layer, der „Wald" heißt.</dd></div>
+      <div><dt>Gemessen</dt><dd>In einem Testlauf blieb der Wald unentdeckt, obwohl direkt daneben welcher liegt. Waldflächen stecken hier als <em>Klasse</em> in einem allgemeinen Vegetationslayer. Ebenso: Schutzgebiete in „Flächen weiterer Nutzung", Leitungen in „Bauwerke und Einrichtungen".</dd></div>
+      <div><dt>Folge</dt><dd>Entscheidungsgrundlage ist die <strong>Beschreibung</strong> des Layers, nicht der Titel und nicht die Feldnamen: die Beschreibung sagt, was drin ist, die Felder sagen nur, wie es heißt. Dazu drei Sperren gegen Überzuordnung — ein erster Anlauf schlug sämtliche Layer der Kategorie „Kulturlandschaft" zu.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Ein Layer kann zwei Kategorien tragen</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Ein Layer gehört zu einem Thema; ein Schlüssel aus dem Layertitel genügt, um seine Abfrage zu merken.</dd></div>
+      <div><dt>Gemessen</dt><dd>„Vegetationsflächen" enthält Wald <em>und</em> Landwirtschaft, unterschieden nur über ein Attribut. Der Schlüssel aus dem Titel allein ließ die zweite Abfrage die erste überschreiben — die zuerst abgefragte Kategorie verlor ihre Objekte und meldete „keine Objekte im Umfeld".</dd></div>
+      <div><dt>Folge</dt><dd>Der Schlüssel ist überall <code>kategorieId + layer</code>. Die Klassenfilter werden je Kategorie automatisch gesetzt: Wald bekommt Nadelholz, Laubholz, Laub- und Nadelholz; Landwirtschaft bekommt Ackerland und Grünland.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Ein Deckel, der genau getroffen wird, ist kein Messwert</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>200 Objekte je Abfrage reichen für ein Erstscreening.</dd></div>
+      <div><dt>Gemessen</dt><dd>Ein Lauf meldete exakt <span class="messwert">200</span> Objekte. Das war das Limit, nicht die Realität — und die Flächensumme damit ein Mindestwert, der wie ein Ergebnis aussah.</dd></div>
+      <div><dt>Folge</dt><dd>Der Deckel liegt bei 20.000, seitenweise geholt. Die Anzahl selbst kommt aus <code>queryFeatureCount()</code> und ist immer exakt. Greift der Deckel doch, zeigt das Ergebnis „≥" an der Leitzahl und einen Teilmessungs-Chip.</dd></div>
+    </dl>
+  </article>
+
+  <article class="befund">
+    <h3>Abstandsvorschrift und Untersuchungsradius sind verschiedene Größen</h3>
+    <dl>
+      <div><dt>Angenommen</dt><dd>Der Untersuchungsradius lässt sich aus den Dokumenten belegen.</dd></div>
+      <div><dt>Gemessen</dt><dd>Die Normen nennen <em>Abstandsvorschriften</em>: fünf Meter Gewässerrandstreifen, 40 bzw. 20 Meter Anbauverbotszone. Von den acht Ankernormen tragen <span class="messwert">zwei</span> eine echte Abstandsangabe, <span class="messwert">eine</span> eine Zahl ohne Abstandsbezug (§ 43 EnWG nennt 200 Meter <em>Leitungslänge</em>), <span class="messwert">fünf</span> keine. Ein Untersuchungsradius für eine 150-Meter-Anlage liegt dagegen im Kilometerbereich — und steht in keinem Dokument.</dd></div>
+      <div><dt>Folge</dt><dd>Bewusst nicht gelöst. Jeder Radius ist sichtbar als Modellannahme gekennzeichnet — Stern am Chip, Vermerk im Tooltip. Eine eigene Formel wäre deterministisch und belegbar, aber unsere Erfindung: genau die Scheingenauigkeit, gegen die die Prüfung gebaut ist. Korrigiert wurde stattdessen die Behauptung in der Oberfläche: der Tooltip sagt jetzt, dass die <em>Zahl</em> geprüft ist, nicht ihre fachliche Bedeutung.</dd></div>
+    </dl>
+  </article>
+</section>
+
+<section>
+  <p class="eyebrow">Modell und Kosten</p>
+  <h2>Was läuft, wo, und was es kostet</h2>
+
+  <div class="tafel">
+    <table>
+      <thead><tr><th>Rolle</th><th>Modell</th><th>Wo</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Denken</td>
+          <td><strong>GPT-5.4-nano</strong> — laut Release Notes die Stufe <code>fast</code>, auf der die Anwendung läuft. Für <code>default</code> und <code>advanced</code> ist kein Modell genannt.</td>
+          <td>Esri-gehostet</td>
+        </tr>
+        <tr>
+          <td>Einbetten</td>
+          <td><strong>embeddinggemma</strong> über Ollama</td>
+          <td>lokal, Port 11434</td>
+        </tr>
+        <tr>
+          <td>Routen</td>
+          <td>nicht benannt — die Intent-Erkennung der Assistant-Komponente, vor jedem Aufruf</td>
+          <td>Esri-gehostet</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    Das Modell ist nicht austauschbar: <em>„You cannot change the LLM used by
+    agents provided by the JavaScript Maps SDK, including the LLM used for agent
+    orchestration."</em> Ein eigenes Modell ginge nur über einen eigenen
+    LangGraph-Backend-Weg.
+  </p>
+
+  <div class="merke">
+    <p>
+      <strong>Kosten: in der Beta keine.</strong> Esris FAQ zu den agentischen
+      Apps sagt: <em>„There will be no cost to end users or organizations for
+      using AI components during the beta period."</em> Die AI-Komponenten sind
+      in 5.1 weiterhin Beta.
+    </p>
+    <p>
+      Für danach kündigt dieselbe Seite Kosten an — bemessen an der
+      <em>„number of interactions with agents and LLM calls"</em>, mit einer
+      Struktur, die erst in einem Preview-Release festgelegt wird. In der
+      Projektdokumentation stand bis zum 11.10. das Gegenteil („Kostet
+      ArcGIS-Credits"); das war falsch und ist korrigiert.
+    </p>
+  </div>
+
+  <h4>Was ein Lauf an Modellaufrufen auslöst</h4>
+  <p>
+    Aus einem echten Log hochgerechnet, nicht gemessen: vier Intent-Erkennungen
+    des Orchestrators, rund 46 Runden im Hauptagenten bei 42 Werkzeugaufrufen,
+    rund 32 in den beiden Recherche-Agenten, rund 126 im LayerAgent über 21
+    Läufe, drei im BerichtAgent — zusammen etwa <strong>210
+    Modellaufrufe</strong>. Davon waren 20 von 42 <code>pruefeKategorie</code>-Aufrufen
+    Wiederholungen durch den 429-Fehlalarm.
+  </p>
+  <p>
+    Weil später nach Aufrufen abgerechnet wird, zählt die Anwendung seit dem
+    11.10. mit. Die Zahlen hängen nicht am Antwortereignis — die Nachricht dort
+    führt kein Verbrauchsfeld —, sondern als <code>usage_metadata</code> an der
+    Modellnachricht selbst. Gelesen wird im <code>afterModel</code>-Hook, über
+    eine Middleware an allen sechs Agenten. Angezeigt wird die Summe unter der
+    Fortschrittsanzeige, aufgeschlüsselt nach Agent.
+  </p>
+</section>
+
+<section>
+  <p class="eyebrow">Stand</p>
+  <h2>Was bestätigt ist und was offen</h2>
+
+  <h4>Im Lauf bestätigt</h4>
+  <ul>
+    <li><span class="marke m-ja">belegt</span> Alle sechs Agenten laufen. 17 Subagentenläufe ohne Fehler, der Checkpointer-Rückfall feuerte nie.</li>
+    <li><span class="marke m-ja">belegt</span> Der Wald kommt über § 39 LFoG NRW als BELEGT zurück — die Lücke, für die die Ankernormen gebaut wurden.</li>
+    <li><span class="marke m-ja">belegt</span> Null Kachelfehler nach der Umstellung auf den LayerView-Filter; 27 von 36 LayerViews bereit (die neun übrigen sind Gruppenlayer ohne Features).</li>
+    <li><span class="marke m-ja">belegt</span> Die Mehrfachzuordnung hält: „Vegetationsflächen" wird je Kategorie korrekt gefiltert.</li>
+    <li><span class="marke m-ja">belegt</span> Die Tokenzählung funktioniert — für den Hauptagenten gemessen, 10 Aufrufe, 57.862 Tokens.</li>
+  </ul>
+
+  <h4>Offen</h4>
+  <ul>
+    <li>Die Tokenzählung der <strong>Subagenten</strong> ist seit der Middleware-Reparatur noch nicht im Lauf bestätigt.</li>
+    <li>Ein bewusst <strong>übersprungener Layer</strong> wird nirgends vermerkt. Der LayerAgent darf einen Layer als nicht einschlägig abtun, aber die Nachfass-Prüfung sieht das nicht und schlägt ihn erneut vor — in einem Lauf blieben so über drei Runden 6 → 5 → 5 Layer „offen".</li>
+    <li>Die <strong>Retrievalqualität der Regionalpläne</strong> ist ungeprüft. Drei Pläne laufen über den Seiten-Rückfall und liefern gröbere Fundstellen; der Plan Arnsberg TA Soest/HSK ist von 2012.</li>
+    <li>Der <strong>Orchestrator</strong> macht vor jedem Aufruf eine Intent-Erkennung per LLM. Bei einem registrierten Agenten und versteckter Oberfläche ist das reiner Aufwand, laut Typdefinition aber nicht abschaltbar.</li>
+    <li><strong>Shapefile-Import</strong> und die Koordinateneingabe in projizierten Formaten sind nie im Lauf getestet.</li>
+  </ul>
+</section>
+
+<section>
+  <p class="eyebrow">Werkzeugkasten</p>
+  <h2>Wo was liegt</h2>
+
+  <div class="tafel">
+    <table>
+      <thead><tr><th>Datei</th><th>Inhalt</th></tr></thead>
+      <tbody>
+        <tr><td class="k">app.js</td><td>Verdrahtung, Ablaufsteuerung, Nachfass-Schritte, Fehlerbehandlung des Modelldienstes</td></tr>
+        <tr><td class="k">src/screening/agents.js</td><td>Der Hauptagent, sein Systemprompt, die Fortschritts-Middleware</td></tr>
+        <tr><td class="k">src/screening/subagenten.js</td><td>Vier Subagenten hinter drei Werkzeugen</td></tr>
+        <tr><td class="k">src/screening/bericht.js</td><td>BerichtAgent, aufgerufen aus <code>fasseZusammen</code></td></tr>
+        <tr><td class="k">src/screening/agentlauf.js</td><td>Die gemeinsame Lauf-Mechanik. Eigenes Modul, damit kein Importzyklus entsteht</td></tr>
+        <tr><td class="k">src/screening/tools.js</td><td>Die Werkzeuge: Region, Layer, Abfrage, Messung, Radiusprüfung</td></tr>
+        <tr><td class="k">src/screening/kategorien.js</td><td>Katalog der acht Kategorien mit Ankernormen, Stichworten, Leitmaß</td></tr>
+        <tr><td class="k">src/screening/tokens.js</td><td>Tokenzähler über alle Agenten</td></tr>
+        <tr><td class="k">src/screening/analyse.js</td><td>Ergebnisspeicher, Panel, Ringdiagramme, Kartenfokus</td></tr>
+        <tr><td class="k">src/karte.js</td><td>Karte, Zeichenwerkzeuge, Zonen, Objektfilter</td></tr>
+        <tr><td class="k">rag/server.py</td><td>Hybride Suche, Ankernormen, drei Endpunkte</td></tr>
+        <tr><td class="k">rag/ingest.py · ingest_rp.py</td><td>Chunking der Gesetze und der Regionalpläne</td></tr>
+        <tr><td class="k">CLAUDE.md</td><td>Die laufende Referenz. Jede Entscheidung mit Begründung und Messwert</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  <p>
+    Räumliches Erstscreening eines raumbedeutsamen Vorhabens · ArcGIS Maps SDK
+    for JavaScript 5.1.20 · Esri-gehostete Modelle, Ollama und ChromaDB lokal ·
+    Nordrhein-Westfalen, sieben Planungsregionen.
+  </p>
+  <p>
+    Alle Messwerte in diesem Dokument stammen aus Läufen gegen das laufende
+    System oder aus Testreihen. Wo etwas nicht gemessen wurde, steht es dabei.
+  </p>
+</footer>
+
+</div>

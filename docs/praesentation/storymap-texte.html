@@ -1,0 +1,439 @@
+<title>StoryMap-Texte Erstscreening</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Nunito+Sans:wght@400;600;700&display=swap">
+
+<style>
+  /* Layout: Arbeitsmappe. Je Block ein Kasten mit Kopierknopf, darüber ein
+     Vermerk, was er ersetzt. Farben wie in der Projektbilanz — Stahlblau auf
+     blaustichigem Papiergrau, damit die Projektdokumente eine Familie sind. */
+  :root {
+    --papier: #eef0f3;
+    --blatt: #ffffff;
+    --blatt-2: #f6f7f9;
+    --tinte: #1e242b;
+    --leise: #5b636e;
+    --linie: #d9dde3;
+    --stahl: #2b4c7e;
+    --stahl-weich: #e7edf5;
+    --rot: #9f2230;
+    --rot-weich: #fae9eb;
+    --gruen: #16794a;
+    --gruen-weich: #e2f1ea;
+    --bernstein: #8a5206;
+    --bernstein-weich: #f8eedd;
+
+    --serif: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+    --sans: "Nunito Sans", "Avenir Next", Avenir, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --papier: #14181d; --blatt: #1c2127; --blatt-2: #222830;
+      --tinte: #e4e8ed; --leise: #98a2ae; --linie: #323a44;
+      --stahl: #7fa6d8; --stahl-weich: #1a2634;
+      --rot: #e78a93; --rot-weich: #30191c;
+      --gruen: #5cc295; --gruen-weich: #122a21;
+      --bernstein: #d8a44f; --bernstein-weich: #2d2416;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --papier: #14181d; --blatt: #1c2127; --blatt-2: #222830;
+    --tinte: #e4e8ed; --leise: #98a2ae; --linie: #323a44;
+    --stahl: #7fa6d8; --stahl-weich: #1a2634;
+    --rot: #e78a93; --rot-weich: #30191c;
+    --gruen: #5cc295; --gruen-weich: #122a21;
+    --bernstein: #d8a44f; --bernstein-weich: #2d2416;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--papier); color: var(--tinte);
+    font-family: var(--sans); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mappe {
+    max-width: 780px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 0 90px;
+  }
+
+  header { display: grid; gap: 12px; padding-block: 52px 26px; border-bottom: 2px solid var(--stahl); }
+  .kennung { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--leise); }
+  h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(30px, 5.5vw, 44px); line-height: 1.06; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+  .vorspann { margin: 0; max-width: 58ch; font-size: 17px; color: var(--leise); }
+
+  section { padding-block: 38px 0; }
+  h2 { font-family: var(--serif); font-weight: 700; font-size: clamp(21px, 3.2vw, 26px); line-height: 1.2; margin: 0 0 14px; text-wrap: balance; }
+  .ort { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--stahl); font-weight: 600; margin: 0 0 6px; }
+  p { max-width: 64ch; margin: 0 0 12px; }
+  .hinweis { font-size: 14.5px; color: var(--leise); max-width: 62ch; margin: 0 0 12px; }
+  .hinweis b { color: var(--tinte); }
+
+  /* ── Textblock mit Kopierknopf ──────────────────────────────────────── */
+  .block { background: var(--blatt); border: 1px solid var(--linie); border-radius: 10px; margin: 0 0 18px; overflow: hidden; }
+  .kopf {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+    padding: 9px 14px; background: var(--blatt-2); border-bottom: 1px solid var(--linie);
+  }
+  .rolle { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--leise); min-width: 0; }
+  .text {
+    margin: 0; padding: 16px 18px; white-space: pre-wrap;
+    font-family: var(--sans); font-size: 15.5px; line-height: 1.6;
+    overflow-wrap: break-word;
+  }
+  .text .fett { font-weight: 700; }
+  button.kopieren {
+    font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+    padding: 5px 11px; border-radius: 6px; cursor: pointer;
+    background: var(--stahl); color: #fff; border: 1px solid var(--stahl);
+    flex: none;
+  }
+  button.kopieren:hover { filter: brightness(1.08); }
+  button.kopieren.fertig { background: var(--gruen); border-color: var(--gruen); }
+  :focus-visible { outline: 2px solid var(--stahl); outline-offset: 2px; }
+
+  /* ── Marken ─────────────────────────────────────────────────────────── */
+  .marke {
+    display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 7px;
+    border-radius: 4px; white-space: nowrap; margin-right: 8px;
+  }
+  .m-falsch { color: var(--rot); background: var(--rot-weich); }
+  .m-neu { color: var(--gruen); background: var(--gruen-weich); }
+  .m-schaerfer { color: var(--bernstein); background: var(--bernstein-weich); }
+
+  .legende { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 18px 0 0; font-size: 13.5px; color: var(--leise); }
+  .legende span { display: flex; align-items: center; }
+
+  .kette { background: var(--blatt); border: 1px solid var(--linie); border-radius: 10px; padding: 16px 18px; margin: 0 0 18px; font-family: var(--mono); font-size: 13px; line-height: 1.9; }
+  .kette b { font-family: var(--sans); font-size: 14.5px; font-weight: 700; }
+  .kette i { color: var(--leise); font-style: normal; }
+
+  footer { margin-top: 50px; padding-top: 18px; border-top: 1px solid var(--linie); color: var(--leise); font-size: 13.5px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="mappe">
+
+<header>
+  <div class="kennung">Arbeitsmappe · zum Einsetzen in die StoryMap</div>
+  <h1>Texte für die StoryMap</h1>
+  <p class="vorspann">
+    High Level formuliert, aber so, dass jede Aussage einer Nachfrage standhält.
+    Jeder Block lässt sich einzeln kopieren.
+  </p>
+  <div class="legende">
+    <span><em class="marke m-falsch">ersetzt</em> war sachlich falsch</span>
+    <span><em class="marke m-neu">neu</em> fehlte bisher</span>
+    <span><em class="marke m-schaerfer">geschärft</em> war ungenau</span>
+  </div>
+</header>
+
+<section>
+  <p class="ort">Titel und Einführung</p>
+  <h2>Der Rahmen</h2>
+
+  <p class="hinweis">
+    <b>„Bauvorhaben" ist enger als das Projekt.</b> Es geht um raumbedeutsame
+    Vorhaben und Raumordnung — bei diesem Publikum ein stehender Begriff mit
+    anderer Bedeutung.
+  </p>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-schaerfer">geschärft</em>Titel</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Räumliches Erstscreening raumbedeutsamer Vorhaben</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-neu">neu</em>Untertitel</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Wie ein KI-Agent Geodaten, Regionalpläne und Fachrecht zu einer nachvollziehbaren Grundlage zusammenführt</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle">Einordnung</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Die Anwendung trifft keine Entscheidung über Zulässigkeit oder Raumverträglichkeit. Sie stellt fest, was im Untersuchungsraum liegt, gibt die einschlägigen Festlegungen im Wortlaut wieder und benennt, was vertieft zu prüfen ist.
+
+Diese Grenze ist bewusst gesetzt. Und wo die Anwendung etwas annimmt, statt es zu belegen, schreibt sie es dazu.</p>
+  </div>
+
+  <p class="hinweis">
+    Der letzte Satz ist die Eintrittskarte für den Radius weiter unten. Wenn er
+    hier steht, wirkt die Kennzeichnung später als Stärke und nicht als
+    Einschränkung.
+  </p>
+</section>
+
+<section>
+  <p class="ort">Die Anwendung · Nutzereingabe</p>
+  <h2>Was der Nutzer eingibt</h2>
+
+  <p class="hinweis">
+    <b>Die Vorhabenart bestimmt nicht den Regionalplan.</b> Das tut die
+    Geometrie — über die Lage. Der Aufzählungspunkt stand bisher unter der
+    falschen Eingabe.
+  </p>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-falsch">ersetzt</em>Vorhabenart</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Sechs Vorhabenarten stehen zur Wahl — von der Windenergieanlage über die Trasse bis zum Gewerbegebiet. Die Auswahl steuert, mit welcher fachlichen Fragestellung die Dokumente später durchsucht werden.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-falsch">ersetzt</em>Geometrie</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">In der Karte zeichnen, ein Shapefile hochladen oder Koordinaten eingeben. Aus der Lage ermittelt die Anwendung die Planungsregion und damit den geltenden Regionalplan.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle">Kommentar</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Freitext für Besonderheiten des Vorhabens, etwa die geplante Anlagenhöhe.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-schaerfer">geschärft</em>Hinweis zum Prompt</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Aus den Eingaben entsteht im Hintergrund ein standardisierter Auftrag an den Agenten. Das stellt sicher, dass jedes Screening mit derselben, vollständigen Ausgangslage beginnt.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-falsch">ersetzt</em>Hinweis zur GIS-Operation</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Welche Planungsregion betroffen ist, bestimmt eine Verschneidung mit den Gemeindegrenzen — nicht das Sprachmodell. Der geltende Regionalplan steht damit fest, bevor die inhaltliche Arbeit beginnt.</p>
+  </div>
+</section>
+
+<section>
+  <p class="ort">Die Anwendung · Agentische Arbeit</p>
+  <h2>Der Ablauf, in fünf Schritten</h2>
+
+  <p class="hinweis">
+    <b>Die Schritte waren falsch nummeriert</b> („Schritt 3" kam zweimal), und
+    der erste fehlte ganz. Hier die vollständige Folge.
+  </p>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-schaerfer">geschärft</em>Einleitung</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Die Anwendung besteht aus einem Hauptagenten und fünf spezialisierten Subagenten. Der Hauptagent führt die fachlichen Aufgaben nicht selbst aus. Er orchestriert den Ablauf und entscheidet, welche Werkzeuge und welche Subagenten gebraucht werden.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-neu">neu</em>Schritt 1 — Überschrift</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Schritt 1: Welche Themen sind überhaupt zu prüfen?</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-neu">neu</em>Schritt 1 — Text</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Bevor irgendetwas gesucht wird, klärt ein eigener Subagent, welche öffentlichen Belange bei einem Vorhaben dieser Art zu betrachten sind. Er entscheidet das nicht aus eigenem Wissen — er liest es im Gesetz nach.
+
+Für jedes der acht Themen ist zusätzlich die Norm hinterlegt, die es rechtlich trägt: das Landesforstgesetz für die Waldumwandlung, das Denkmalschutzgesetz für Baudenkmäler. Diese Normen werden nicht gesucht, sondern gezielt aufgeschlagen.</p>
+  </div>
+
+  <p class="hinweis">
+    Der zweite Absatz ist der Unterschied zwischen „wir hoffen, die Suche findet
+    das Richtige" und „wir wissen, wo es steht". Für eine technische Runde der
+    überzeugendste Teil.
+  </p>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-schaerfer">geschärft</em>Schritt 2 — Überschrift</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Schritt 2: Regionalplan und Fachrecht auswerten</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-schaerfer">geschärft</em>Schritt 2 — Text</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Für jedes Thema arbeiten zwei Subagenten gleichzeitig: einer im geltenden Regionalplan, einer im Gesetzeskorpus. Sie beantworten zwei verschiedene Fragen — ein Regionalplan regelt Gebiete, ein Fachgesetz regelt Schutzgüter. Zurück kommen die einschlägigen Passagen im Wortlaut, mit Fundstelle.
+
+Grundlage ist ein RAG (Retrieval-Augmented Generation): Das Sprachmodell bekommt nicht die Dokumente, sondern gezielt die passenden Ausschnitte daraus. Gefunden werden sie über zwei Wege gleichzeitig — über die Bedeutung des Textes und über die darin enthaltenen Begriffe.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-falsch">ersetzt</em>Schritt 2 — Untersuchungsradius</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Der Untersuchungsradius
+
+Je Thema wird ein Untersuchungsradius festgelegt. Nennt eine Passage eine konkrete Weite, wird sie mit Fundstelle übernommen. Nennt keine eine, setzt das Modell eine an — und die Anwendung kennzeichnet sie als Annahme.
+
+Das ist der Regelfall. Gesetze nennen Abstandsvorschriften, etwa fünf Meter Gewässerrandstreifen. Ein Untersuchungsradius für ein Erstscreening ist etwas anderes und steht so in keinem Dokument. Statt eine belegt wirkende Zahl zu erfinden, zeigt die Anwendung, welche Angabe woher stammt.</p>
+  </div>
+
+  <p class="hinweis">
+    <b>Die wichtigste Korrektur.</b> Bisher stand da, das RAG ermittle den
+    Radius. Gemessen war er in acht von acht Fällen nicht belegt. Diese Fassung
+    sagt dasselbe Ergebnis, aber als bewusste Entscheidung — und hält der
+    Nachfrage stand.
+  </p>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-schaerfer">geschärft</em>Schritt 3 — Überschrift</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Schritt 3: Den passenden Kartenlayer finden</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-schaerfer">geschärft</em>Schritt 3 — Text</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Ist ein Thema als relevant erkannt, sucht ein eigener Subagent die passenden Daten. Dabei entscheidet nicht der Layername.
+
+Der Agent liest die hinterlegten Beschreibungen der Layer und prüft anschließend deren Felder und Attributwerte. Das ist nötig, weil Einschlägiges oft unter unscheinbaren Namen steckt: Waldflächen liegen in diesem Datenbestand nicht in einem Layer namens „Wald", sondern als Ausprägung in einem allgemeinen Vegetationslayer.
+
+Gepflegte Metadaten sind damit keine Formalie, sondern die Voraussetzung dafür, dass der Agent die richtigen Daten findet.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-neu">neu</em>Schritt 4 — Überschrift und Einleitung</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Schritt 4: Räumliche Analyse
+
+Ab hier rechnet die Anwendung, nicht das Modell. Jeder Schritt ist eine definierte Funktion des ArcGIS Maps SDK for JavaScript.</p>
+  </div>
+
+  <p class="hinweis">
+    Deine Funktionskette darunter bleibt, wie sie ist — sie stimmt. Nur die
+    Reihenfolge der Erzählung: die Untersuchungszone entsteht schon bei der
+    Relevanzbewertung in Schritt 2, nicht erst hier. Ohne Zone ist die
+    Kartenabfrage im Code gesperrt.
+  </p>
+
+  <div class="kette">
+    <b>Untersuchungszone erzeugen</b> · <i>geodesicBufferOperator</i><br>
+    ↓<br>
+    <b>Objekte zählen</b> · <i>queryFeatureCount()</i><br>
+    ↓<br>
+    <b>Features laden</b> · <i>queryFeatures()</i><br>
+    ↓<br>
+    <b>Auf Untersuchungsraum zuschneiden</b> · <i>intersectionOperator</i><br>
+    ↓<br>
+    <b>Flächen und Längen bestimmen</b> · <i>geodeticAreaOperator / geodeticLengthOperator</i><br>
+    ↓<br>
+    <b>Relevante Objekte darstellen</b> · <i>FeatureFilter.objectIds + LayerView</i>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-neu">neu</em>Schritt 4 — Abschluss</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Die Zahlen im Ergebnis stammen aus dieser Kette. Das Sprachmodell gibt sie weiter, es ermittelt sie nicht.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-schaerfer">geschärft</em>Schritt 5 — Überschrift und Text</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Schritt 5: Ergebnisse zusammenführen
+
+Die Ergebnisse aus Dokumentenrecherche und räumlicher Analyse werden zusammengeführt. Ein eigener Subagent formuliert daraus eine verständliche Zusammenfassung — allein aus den ermittelten Befunden, ohne eigene Recherche und ohne eigene Zahlen.</p>
+  </div>
+</section>
+
+<section>
+  <p class="ort">Was steckt dahinter?</p>
+  <h2>Die Architektur</h2>
+
+  <p class="hinweis">
+    <b>Der Satz „Zusätzlich hatten wir Subagenten und RAG als Teile der
+    Architektur vorgesehen" muss weg.</b> Er liest sich wie ein Plan, aus dem
+    nichts wurde. Beides ist gebaut und läuft.
+  </p>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-falsch">ersetzt</em>Subagenten und RAG</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Subagenten und RAG sind feste Bestandteile der Architektur. Fünf spezialisierte Subagenten übernehmen die fachlichen Teilaufgaben — Belange klären, Regionalplan auswerten, Fachrecht auswerten, Kartenlayer prüfen, Bericht formulieren. Das RAG liefert ihnen dafür die passenden Passagen aus Regionalplänen und Gesetzen.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-neu">neu</em>Wo die Daten liegen</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Die Wissensbasis liegt lokal: die Regionalpläne und Gesetze als Originaldokumente, dazu ihre Aufbereitung für die Suche. Zum Sprachmodell geht nur, was es lesen soll — einzelne Passagen im Wortlaut, nicht die Dokumente.</p>
+  </div>
+
+  <p class="hinweis">
+    Der zweite Block beantwortet die Datenschutzfrage, bevor sie gestellt wird.
+    Bei einer Behörde kommt sie zuverlässig.
+  </p>
+</section>
+
+<section>
+  <p class="ort">Mehrwert</p>
+  <h2>Die Liste, entdoppelt</h2>
+
+  <p class="hinweis">
+    Bisher stand derselbe Gedanke dreimal drin („komplexe GIS-Workflows",
+    „komplexe GIS-Abläufe standardisieren", „Zugang zu komplexen räumlichen
+    Workflows"). Sieben klar unterschiedene Punkte wirken stärker als zehn, die
+    sich überschneiden.
+  </p>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-schaerfer">geschärft</em>Mehrwert</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Schneller Einstieg in komplexe räumliche Fragestellungen
+Standardisierter, wiederholbarer Screening-Prozess
+Vorhandene ArcGIS-Daten und -Dienste weiterverwenden
+GIS-Funktionen als Werkzeuge für Agenten verfügbar machen
+Fachwissen aus Dokumenten mit räumlichen Fakten verbinden
+Ergebnisse unmittelbar in der Karte nachvollziehbar
+Niedrigere Einstiegshürde für Fachanwender ohne GIS-Routine</p>
+  </div>
+</section>
+
+<section>
+  <p class="ort">Zum Schluss</p>
+  <h2>Der Schlusssatz, der noch fehlt</h2>
+
+  <p class="hinweis">
+    In deinem Entwurf steht „Der zentrale Schlusssatz war sinngemäß:" und dann
+    nichts. Zwei Vorschläge.
+  </p>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-neu">neu</em>Variante A — die Arbeitsteilung</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Der Agent entscheidet, was gefragt wird. Das GIS liefert, was gilt. Beides bleibt sichtbar — und damit überprüfbar.</p>
+  </div>
+
+  <div class="block">
+    <div class="kopf"><span class="rolle"><em class="marke m-neu">neu</em>Variante B — die Grenze</span><button class="kopieren" type="button">Kopieren</button></div>
+    <p class="text">Die Anwendung nimmt der Fachprüfung keine Entscheidung ab. Sie nimmt ihr die Suche ab — und legt offen, worauf jede Aussage beruht.</p>
+  </div>
+
+  <p class="hinweis">
+    A passt besser, wenn der Bogen zu Geospatial AI und den AI Agents geschlagen
+    wird. B passt besser, wenn Behördenvertreter im Raum sitzen.
+  </p>
+</section>
+
+<footer>
+  Alle Formulierungen sind gegen den Stand der Anwendung geprüft. Wo etwas als
+  Annahme gekennzeichnet ist, steht das auch im Text — das ist Absicht und der
+  belastbarste Teil der Demo.
+</footer>
+
+</div>
+
+<script>
+  document.querySelectorAll(".kopieren").forEach((knopf) => {
+    knopf.addEventListener("click", () => {
+      const block = knopf.closest(".block");
+      const text = block.querySelector(".text").innerText;
+      const quittung = (wort) => {
+        const alt = knopf.textContent;
+        knopf.textContent = wort;
+        knopf.classList.add("fertig");
+        setTimeout(() => {
+          knopf.textContent = alt;
+          knopf.classList.remove("fertig");
+        }, 1600);
+      };
+      // Die Zwischenablage kann abgelehnt werden (ältere Desktop-Clients,
+      // manche App-Ansichten). Dann wenigstens markieren, damit Strg+C greift.
+      try {
+        navigator.clipboard.writeText(text).then(
+          () => quittung("Kopiert"),
+          () => markieren(block, knopf, quittung),
+        );
+      } catch (err) {
+        markieren(block, knopf, quittung);
+      }
+    });
+  });
+
+  function markieren(block, knopf, quittung) {
+    const bereich = document.createRange();
+    bereich.selectNodeContents(block.querySelector(".text"));
+    const auswahl = window.getSelection();
+    auswahl.removeAllRanges();
+    auswahl.addRange(bereich);
+    quittung("Markiert");
+  }
+</script>

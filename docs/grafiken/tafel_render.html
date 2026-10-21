@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<style>
+  @page { margin: 0; }
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  body {
+    width: 1696px;
+    height: 1158px;
+    padding: 24px;
+    box-sizing: border-box;
+    color: #16191d;
+    font-family: "Segoe UI", "Avenir Next", system-ui, sans-serif;
+  }
+  svg { display: block; width: 1648px; height: 1110px; }
+</style></head>
+<body>
+<svg viewBox="0 0 1648 1110" role="img"
+         aria-label="Der Hauptagent als Säule in der Mitte. Links die Funktionen mit ihren Maps-SDK-Aufrufen, rechts vier Werkzeuge mit je einem Subagenten, daneben die sieben Suchschritte des RAG-Backends und rechts der Korpus aus Original-PDFs über Chunking und Ollama in die ChromaDB.">
+      <defs>
+        <marker id="pfo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#b8700f"/></marker>
+        <marker id="pfg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#2b6e4f"/></marker>
+        <marker id="pfa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#c98a1e"/></marker>
+        <marker id="pfl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#7a66b8"/></marker>
+        <marker id="pfs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#1f6fb8"/></marker>
+        <marker id="pfd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="#8a6d3b"/></marker>
+      </defs>
+            <text x="79" y="20" font-family="monospace" font-size="10" fill="#1f6fb8" font-weight="600" text-anchor="middle">MAPS SDK</text>
+      <text x="79" y="32" font-family="sans-serif" font-size="8" fill="#1f6fb8" fill-opacity="0.8" text-anchor="middle">Operator / Abfrage</text>
+      <text x="256" y="26" font-family="monospace" font-size="10" fill="currentColor" fill-opacity="0.6" text-anchor="middle">FUNKTIONEN · fester Code</text>
+      <text x="927" y="20" font-family="monospace" font-size="10" fill="#c98a1e" font-weight="600" text-anchor="middle">WERKZEUG &#8594; SUBAGENT</text>
+      <text x="1200" y="20" font-family="monospace" font-size="10" fill="#7a66b8" font-weight="600" text-anchor="middle">RAG · JE ANFRAGE</text>
+      <text x="1532" y="20" font-family="monospace" font-size="10" fill="#8a6d3b" font-weight="600" text-anchor="middle">KORPUS · EINMAL AUFGEBAUT</text>
+      <line x1="16" y1="40" x2="1632" y2="40" stroke="currentColor" stroke-opacity="0.2"/>
+      <rect x="486" y="54" width="186" height="1000" rx="6" fill="#b8700f" fill-opacity="0.12" stroke="#b8700f" stroke-opacity="1" stroke-width="2"/>
+      <text x="579" y="80" font-family="sans-serif" font-size="13.5" fill="currentColor" font-weight="800" text-anchor="middle">ScreeningAgent</text>
+      <text x="579" y="97" font-family="monospace" font-size="9.5" fill="#b8700f" font-weight="600" text-anchor="middle">orchestriert</text>
+      <line x1="500" y1="108" x2="658" y2="108" stroke="#b8700f" stroke-opacity="0.4"/>
+      <text x="500" y="128" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.8">Er entscheidet:</text>
+      <text x="500" y="144" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">· Reihenfolge der Aufrufe</text>
+      <text x="500" y="160" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">· welche Kategorien geprüft,</text>
+      <text x="500" y="176" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">&#160;&#160;welche verworfen werden</text>
+      <text x="500" y="192" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">· welcher Radius gemeldet wird</text>
+      <text x="500" y="208" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">· wann er nachfasst</text>
+      <line x1="500" y1="238" x2="658" y2="238" stroke="#b8700f" stroke-opacity="0.4"/>
+      <text x="500" y="258" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">Fünf Werkzeuge, mehr</text>
+      <text x="500" y="273" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">nicht. Er sucht keine</text>
+      <text x="500" y="288" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">Layer, misst nichts,</text>
+      <text x="500" y="303" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">liest keine Karte und</text>
+      <text x="500" y="318" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">formuliert den Bericht</text>
+      <text x="500" y="333" font-family="sans-serif" font-size="9.8" fill="currentColor" fill-opacity="0.72">nicht selbst.</text>
+      <text x="579" y="1040" font-family="monospace" font-size="9" fill="currentColor" fill-opacity="0.55" text-anchor="middle">&lt;arcgis-assistant&gt;, off-screen</text>
+      <rect x="156" y="60" width="200" height="50" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="170" y="82" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">holeVorhabenKontext</text>
+      <text x="170" y="100" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">tools.js</text>
+      <line x1="476" y1="76" x2="366" y2="76" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="366" y1="106" x2="476" y2="106" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="421" y="70" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">&#8212;</text>
+      <text x="421" y="120" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">Vorhabenart, Maße</text>
+      <rect x="156" y="150" width="200" height="50" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="170" y="172" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">bestimmeRegion</text>
+      <text x="170" y="190" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">regionen.js · tools.js</text>
+      <rect x="16" y="148" width="126" height="41" rx="6" fill="#1f6fb8" fill-opacity="0.12" stroke="#1f6fb8" stroke-opacity="1" stroke-width="1.4"/>
+      <text x="26" y="168" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">layer.queryFeatures()</text>
+      <text x="26" y="179" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">Abfrage am Dienst</text>
+      <line x1="156" y1="168" x2="146" y2="168" stroke="#1f6fb8" stroke-width="1.3" marker-end="url(#pfs)"/>
+      <line x1="476" y1="166" x2="366" y2="166" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="366" y1="196" x2="476" y2="196" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="421" y="160" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Vorhabengeometrie</text>
+      <text x="421" y="210" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">Planungsregion + Plan</text>
+      <rect x="156" y="560" width="200" height="50" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="170" y="582" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">meldeRelevanz</text>
+      <text x="170" y="600" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">radiusBelegt() · tools.js</text>
+      <rect x="16" y="552" width="126" height="68" rx="6" fill="#1f6fb8" fill-opacity="0.12" stroke="#1f6fb8" stroke-opacity="1" stroke-width="1.4"/>
+      <text x="26" y="572" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">geodesicBufferOperator</text>
+      <text x="26" y="583" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <text x="26" y="599" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">geodeticAreaOperator</text>
+      <text x="26" y="610" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <line x1="156" y1="586" x2="146" y2="586" stroke="#1f6fb8" stroke-width="1.3" marker-end="url(#pfs)"/>
+      <line x1="476" y1="576" x2="366" y2="576" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="366" y1="606" x2="476" y2="606" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="421" y="570" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Kategorie + Radius</text>
+      <text x="421" y="620" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">Zone + Beleg ja/nein</text>
+      <rect x="156" y="660" width="200" height="50" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="170" y="682" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">meldeNichtRelevant</text>
+      <text x="170" y="700" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">tools.js</text>
+      <line x1="476" y1="676" x2="366" y2="676" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="366" y1="706" x2="476" y2="706" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="421" y="670" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Begründung + Fundstelle</text>
+      <text x="421" y="720" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">vermerkt</text>
+      <rect x="156" y="1020" width="200" height="70" rx="6" fill="#1f7a63" fill-opacity="0.12" stroke="#1f7a63" stroke-opacity="1" stroke-width="2"/>
+      <text x="170" y="1044" font-family="sans-serif" font-size="13" fill="currentColor" font-weight="800">Panel + Karte</text>
+      <text x="170" y="1061" font-family="monospace" font-size="9.5" fill="#1f7a63" font-weight="700">ERGEBNIS</text>
+      <text x="170" y="1078" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.65">analyse.js · karte.js</text>
+      <rect x="16" y="1018" width="126" height="68" rx="6" fill="#1f6fb8" fill-opacity="0.12" stroke="#1f6fb8" stroke-opacity="1" stroke-width="1.4"/>
+      <text x="26" y="1038" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">FeatureFilter.objectIds</text>
+      <text x="26" y="1049" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <text x="26" y="1065" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">view.goTo()</text>
+      <text x="26" y="1076" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <line x1="156" y1="1052" x2="146" y2="1052" stroke="#1f6fb8" stroke-width="1.3" marker-end="url(#pfs)"/>
+      <path d="M 256 980 L 256 1016" fill="none" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="268" y="1004" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600">Objekte auf ObjectIDs gefiltert</text>
+      <rect x="802" y="140" width="250" height="48" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="816" y="162" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">klaereBelange</text>
+      <text x="816" y="180" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">subagenten.js</text>
+      <line x1="682" y1="156" x2="792" y2="156" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="792" y1="186" x2="682" y2="186" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="737" y="150" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Vorhaben + Katalog</text>
+      <text x="737" y="200" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">BELEGT · NICHT BERÜHRT</text>
+      <text x="737" y="212" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">OFFEN, je Kategorie</text>
+      <rect x="802" y="198" width="250" height="64" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="220" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">BelangeAgent</text>
+      <text x="816" y="237" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">§ 35 Abs. 3 BauGB + 8 Ankernormen</text>
+      <text x="816" y="250" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">Vollständigkeit im Code geprüft</text>
+      <line x1="927" y1="190" x2="927" y2="195" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <rect x="802" y="300" width="250" height="48" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="816" y="322" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">recherchiere</text>
+      <text x="816" y="340" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">subagenten.js · Promise.all</text>
+      <line x1="682" y1="316" x2="792" y2="316" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="792" y1="346" x2="682" y2="346" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="737" y="310" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">kategorieId + Vorhaben</text>
+      <text x="737" y="360" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">RELEVANT · ZITAT</text>
+      <text x="737" y="372" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">KERN · RADIUS</text>
+      <rect x="802" y="358" width="250" height="38" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="380" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">RegionalplanAgent</text>
+      <line x1="927" y1="350" x2="927" y2="355" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <rect x="802" y="402" width="250" height="38" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="424" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">GesetzAgent</text>
+      <line x1="927" y1="394" x2="927" y2="399" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <text x="816" y="456" font-family="monospace" font-size="9.3" fill="currentColor" fill-opacity="0.65">parallel · je eigener thread_id</text>
+      <rect x="802" y="560" width="250" height="48" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="816" y="582" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">pruefeKategorie</text>
+      <text x="816" y="600" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">subagenten.js</text>
+      <line x1="682" y1="576" x2="792" y2="576" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="792" y1="606" x2="682" y2="606" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="737" y="570" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">kategorieId</text>
+      <text x="737" y="620" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">je Layer Anzahl + Maß</text>
+      <rect x="802" y="654" width="250" height="236" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="676" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">LayerAgent</text>
+      <text x="816" y="693" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">eigene Werkzeuge, recursionLimit 40</text>
+      <line x1="927" y1="646" x2="927" y2="651" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <text x="816" y="712" font-family="monospace" font-size="10.5" fill="currentColor" font-weight="700">beschreibeLayer</text>
+      <text x="816" y="728" font-family="monospace" font-size="10.5" fill="currentColor" font-weight="700">queryLayer</text>
+      <rect x="910" y="748" width="134" height="122" rx="6" fill="#1f6fb8" fill-opacity="0.12" stroke="#1f6fb8" stroke-opacity="1" stroke-width="1.4"/>
+      <text x="920" y="768" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">queryFeatureCount()</text>
+      <text x="920" y="779" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">Abfrage am Dienst</text>
+      <text x="920" y="795" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">layer.queryFeatures()</text>
+      <text x="920" y="806" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">Abfrage am Dienst</text>
+      <text x="920" y="822" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">intersectionOperator</text>
+      <text x="920" y="833" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <text x="920" y="849" font-family="monospace" font-size="8.6" fill="#1f6fb8" font-weight="700">geodeticArea/Length</text>
+      <text x="920" y="860" font-family="sans-serif" font-size="7.8" fill="#1f6fb8" fill-opacity="0.75">lokal im Browser</text>
+      <line x1="902" y1="768" x2="906" y2="768" stroke="#1f6fb8" stroke-width="1.3" marker-end="url(#pfs)"/>
+      <rect x="802" y="920" width="250" height="48" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.45" stroke-width="1"/>
+      <text x="816" y="942" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">fasseZusammen</text>
+      <text x="816" y="960" font-family="monospace" font-size="9.5" fill="currentColor" fill-opacity="0.6">tools.js &#8594; bericht.js</text>
+      <line x1="682" y1="936" x2="792" y2="936" stroke="#b8700f" stroke-width="1.4" marker-end="url(#pfo)"/>
+      <line x1="792" y1="966" x2="682" y2="966" stroke="#2b6e4f" stroke-width="1.4" marker-end="url(#pfg)"/>
+      <text x="737" y="930" font-family="sans-serif" font-size="9.3" fill="#b8700f" font-weight="600" text-anchor="middle">Befunde als Fakten</text>
+      <text x="737" y="980" font-family="sans-serif" font-size="9.3" fill="#2b6e4f" font-weight="600" text-anchor="middle">3 bis 6 Sätze</text>
+      <rect x="802" y="998" width="250" height="64" rx="6" fill="#c98a1e" fill-opacity="0.12" stroke="#c98a1e" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="816" y="1020" font-family="sans-serif" font-size="12.5" fill="currentColor" font-weight="700">BerichtAgent</text>
+      <text x="816" y="1037" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">keine Werkzeuge</text>
+      <text x="816" y="1050" font-family="sans-serif" font-size="9.3" fill="currentColor" fill-opacity="0.72">Zahlen gegen die Fakten geprüft</text>
+      <line x1="927" y1="990" x2="927" y2="995" stroke="#c98a1e" stroke-width="1.4" marker-end="url(#pfa)"/>
+      <rect x="1100" y="54" width="200" height="482" rx="6" fill="#7a66b8" fill-opacity="0.12" stroke="#7a66b8" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1200" y="76" font-family="sans-serif" font-size="10.5" fill="currentColor" font-weight="700" text-anchor="middle">retrieval-only</text>
+      <text x="1200" y="90" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7" text-anchor="middle">Python · FastAPI · Port 8000</text>
+      <text x="1200" y="102" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7" text-anchor="middle">KEIN Modell, das Text erzeugt</text>
+      <text x="1200" y="116" font-family="sans-serif" font-size="8.2" fill="#7a66b8" font-weight="600" text-anchor="middle">angefragt von 3 Subagenten</text>
+      <rect x="1112" y="126" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="141" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">1 Suchtext bauen</text>
+      <text x="1122" y="155" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">wirkungsfrage() — Belang zuerst</text>
+      <rect x="1112" y="178" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="193" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">2 Frage &#8594; Vektor</text>
+      <text x="1122" y="207" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">ruft Ollama</text>
+      <line x1="1200" y1="168" x2="1200" y2="174" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="230" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="245" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">3 Vektorsuche</text>
+      <text x="1122" y="259" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">liest ChromaDB · 40 Kandidaten</text>
+      <line x1="1200" y1="220" x2="1200" y2="226" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="282" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="297" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">4 Stichwortsuche</text>
+      <text x="1122" y="311" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">BM25 im Prozess · 40 Kandidaten</text>
+      <line x1="1200" y1="272" x2="1200" y2="278" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="334" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="349" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">5 Fusion</text>
+      <text x="1122" y="363" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">Reciprocal Rank Fusion, k=60</text>
+      <line x1="1200" y1="324" x2="1200" y2="330" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="386" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="401" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">6 Abstinenzschwelle</text>
+      <text x="1122" y="415" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">unter 0,45 &#8594; leere Liste</text>
+      <line x1="1200" y1="376" x2="1200" y2="382" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1112" y="438" width="176" height="38" rx="4" fill="none" stroke="#7a66b8" stroke-opacity="0.5" stroke-width="1"/>
+      <text x="1122" y="453" font-family="sans-serif" font-size="9.5" fill="currentColor" font-weight="700">7 Dubletten raus</text>
+      <text x="1122" y="467" font-family="monospace" font-size="8.2" fill="currentColor" fill-opacity="0.7">je Fundstelle ein Chunk</text>
+      <line x1="1200" y1="428" x2="1200" y2="434" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <text x="1200" y="520" font-family="sans-serif" font-size="9.5" fill="#7a66b8" font-weight="700" text-anchor="middle">&#8594; Passagen im Wortlaut</text>
+      <line x1="1056" y1="225" x2="1070" y2="225" stroke="#7a66b8" stroke-width="1.2" stroke-opacity="0.75"/>
+      <line x1="1056" y1="377" x2="1070" y2="377" stroke="#7a66b8" stroke-width="1.2" stroke-opacity="0.75"/>
+      <line x1="1056" y1="421" x2="1070" y2="421" stroke="#7a66b8" stroke-width="1.2" stroke-opacity="0.75"/>
+      <line x1="1070" y1="421" x2="1070" y2="92" stroke="#7a66b8" stroke-width="1.2" stroke-opacity="0.75"/>
+      <line x1="1070" y1="92" x2="1096" y2="92" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <rect x="1432" y="54" width="200" height="92" rx="6" fill="#8a6d3b" fill-opacity="0.12" stroke="#8a6d3b" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="74" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">Original-PDF</text>
+      <text x="1446" y="90" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">Rechtsgrundlagen/  21 PDF · 12 MB</text>
+      <text x="1446" y="103" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">Regionalplaene/    28 PDF · 481 MB</text>
+      <text x="1446" y="116" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">amtliche Dokumente, unverändert</text>
+      <text x="1446" y="129" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">7 Planungsregionen, 21 Gesetze</text>
+      <line x1="1532" y1="150" x2="1532" y2="174" stroke="#8a6d3b" stroke-width="1.4" marker-end="url(#pfd)"/>
+      <text x="1540" y="166" font-family="sans-serif" font-size="8.6" fill="#8a6d3b" font-weight="600">Ingest, einmal</text>
+      <rect x="1432" y="178" width="200" height="76" rx="6" fill="#8a6d3b" fill-opacity="0.12" stroke="#8a6d3b" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="198" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">Chunking</text>
+      <text x="1446" y="214" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">ingest.py · ingest_rp.py</text>
+      <text x="1446" y="227" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">§-Marker bzw. Ziel-Nummer,</text>
+      <text x="1446" y="240" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">sonst seitenweise</text>
+      <text x="1446" y="253" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">&#8594; 5.801 Chunks</text>
+      <line x1="1532" y1="258" x2="1532" y2="282" stroke="#8a6d3b" stroke-width="1.4" marker-end="url(#pfd)"/>
+      <rect x="1432" y="286" width="200" height="78" rx="6" fill="#7a66b8" fill-opacity="0.12" stroke="#7a66b8" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="306" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">Ollama</text>
+      <text x="1446" y="320" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">embeddinggemma · Port 11434</text>
+      <text x="1446" y="333" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.78">übersetzt Text in Zahlen —</text>
+      <text x="1446" y="346" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.78" font-weight="700">erzeugt KEINEN Text</text>
+      <text x="1446" y="359" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.6">lru_cache auf die Frage</text>
+      <line x1="1532" y1="368" x2="1532" y2="392" stroke="#8a6d3b" stroke-width="1.4" marker-end="url(#pfd)"/>
+      <text x="1540" y="384" font-family="sans-serif" font-size="8.6" fill="#8a6d3b" font-weight="600">Vektor je Chunk</text>
+      <rect x="1432" y="396" width="200" height="88" rx="6" fill="#7a66b8" fill-opacity="0.12" stroke="#7a66b8" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="416" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">ChromaDB</text>
+      <text x="1446" y="430" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">rag/chroma_db · auf Platte</text>
+      <text x="1446" y="445" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">rechtsgrundlagen  4.407</text>
+      <text x="1446" y="458" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">regionalplaene    1.394</text>
+      <text x="1446" y="472" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.6">Vektor + Metadaten je Chunk</text>
+      <path d="M 1292 197 L 1330 197 L 1330 325 L 1428 325" fill="none" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <text x="1422" y="318" font-family="sans-serif" font-size="8.4" fill="#7a66b8" font-weight="600" text-anchor="end">Frage einbetten</text>
+      <path d="M 1292 249 L 1350 249 L 1350 430 L 1428 430" fill="none" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <text x="1422" y="423" font-family="sans-serif" font-size="8.4" fill="#7a66b8" font-weight="600" text-anchor="end">Vektorsuche</text>
+      <path d="M 1292 301 L 1370 301 L 1370 455 L 1428 455" fill="none" stroke="#7a66b8" stroke-width="1.2" marker-end="url(#pfl)"/>
+      <text x="1422" y="448" font-family="sans-serif" font-size="8.4" fill="#7a66b8" font-weight="600" text-anchor="end">Volltext für BM25</text>
+      <line x1="1532" y1="488" x2="1532" y2="506" stroke="#2b6e4f" stroke-width="1.3" marker-end="url(#pfg)"/>
+      <rect x="1432" y="510" width="200" height="74" rx="6" fill="#2b6e4f" fill-opacity="0.12" stroke="#2b6e4f" stroke-opacity="1" stroke-width="1.5"/>
+      <text x="1446" y="530" font-family="sans-serif" font-size="11.5" fill="currentColor" font-weight="700">Ankernorm</text>
+      <text x="1446" y="544" font-family="monospace" font-size="8.4" fill="currentColor" fill-opacity="0.78">col.get(where={kuerzel,norm})</text>
+      <text x="1446" y="558" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.78" font-weight="700">GEHOLT, nicht gesucht:</text>
+      <text x="1446" y="571" font-family="sans-serif" font-size="8.4" fill="currentColor" fill-opacity="0.78">kein Embedding, kein Rang</text>
+      <path d="M 1428 556 L 1082 556 L 1082 245 L 1056 245" fill="none" stroke="#2b6e4f" stroke-width="1.2" marker-end="url(#pfg)"/>
+      <text x="1200" y="549" font-family="sans-serif" font-size="8.4" fill="#2b6e4f" font-weight="600" text-anchor="middle">§ 39 LFoG NRW für &#8222;wald&#8220; — geht mit der Antwort zurück</text>
+    </svg>
+</body></html>

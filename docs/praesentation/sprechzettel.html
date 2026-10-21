@@ -1,0 +1,530 @@
+<title>Sprechzettel Erstscreening</title>
+<style>
+  :root {
+    --bg: #fbfaf8; --flaeche: #ffffff; --flaeche-2: #f3f1ed;
+    --ink: #1b1f24; --leise: #5f6b78; --linie: #e0ddd6;
+    --akzent: #2f6ea8; --akzent-weich: #e6eff7;
+    --ha: #b8700f; --ha-weich: #fbeed8;
+    --ki: #c98a1e; --ki-weich: #fcf2de;
+    --rag: #7a66b8; --rag-weich: #efecf9;
+    --dok: #7a5c20; --dok-weich: #f5ecd8;
+    --gr: #1f7a63; --gr-weich: #dff2ec;
+    --sans: "Avenir Next", "Nunito Sans", system-ui, -apple-system, sans-serif;
+    --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171b21; --flaeche: #1e242c; --flaeche-2: #232a33;
+      --ink: #e6e9ee; --leise: #9aa4b2; --linie: #333c47;
+      --akzent: #7ea6dd; --akzent-weich: #1c2836;
+      --ha: #e09a4a; --ha-weich: #3a2a12;
+      --ki: #e0a94a; --ki-weich: #322715;
+      --rag: #a893e0; --rag-weich: #251f38;
+      --dok: #d8b878; --dok-weich: #332714;
+      --gr: #6fc8ae; --gr-weich: #13302a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171b21; --flaeche: #1e242c; --flaeche-2: #232a33;
+    --ink: #e6e9ee; --leise: #9aa4b2; --linie: #333c47;
+    --akzent: #7ea6dd; --akzent-weich: #1c2836;
+    --ha: #e09a4a; --ha-weich: #3a2a12;
+    --ki: #e0a94a; --ki-weich: #322715;
+    --rag: #a893e0; --rag-weich: #251f38;
+    --dok: #d8b878; --dok-weich: #332714;
+    --gr: #6fc8ae; --gr-weich: #13302a;
+  }
+
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15.5px; line-height: 1.62; -webkit-font-smoothing: antialiased; }
+  .huelle { max-width: 860px; margin: 0 auto; padding: 0 24px 90px; }
+
+  header { display: grid; gap: 10px; padding: 50px 0 26px; border-bottom: 2px solid var(--akzent); }
+  .kennung { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--leise); }
+  h1 { margin: 0; font-size: clamp(28px, 4.4vw, 40px); font-weight: 800; letter-spacing: -0.028em; line-height: 1.08; }
+  .lead { margin: 0; max-width: 60ch; font-size: 16.5px; color: var(--leise); }
+
+  section { padding-top: 40px; }
+  h2 { margin: 0 0 6px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+  h2 .nr { display: inline-block; min-width: 2.4em; font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--akzent); }
+  h3 { margin: 26px 0 6px; font-size: 16px; font-weight: 700; }
+  p { max-width: 68ch; margin: 0 0 13px; }
+  .wo { margin: 0 0 14px; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.04em; color: var(--leise); }
+  .wo::before { content: "▸ im Bild: "; }
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--flaeche-2); border: 1px solid var(--linie); border-radius: 4px; padding: 0.06em 0.34em; }
+
+  /* Was man laut sagt. */
+  .sag { margin: 14px 0 18px; padding: 15px 20px; background: var(--flaeche); border: 1px solid var(--linie); border-left: 4px solid var(--akzent); border-radius: 0 10px 10px 0; }
+  .sag p { margin: 0; max-width: none; font-size: 16px; }
+  .sag p + p { margin-top: 9px; }
+  .sag::before { content: "So sagen"; display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--leise); margin-bottom: 7px; }
+
+  /* Wenn jemand nachbohrt. */
+  .frage { margin: 14px 0; padding: 14px 18px; background: var(--flaeche-2); border: 1px solid var(--linie); border-radius: 10px; }
+  .frage p { margin: 0; max-width: none; font-size: 14.5px; }
+  .frage p + p { margin-top: 8px; }
+  .frage b { color: var(--akzent); }
+
+  .marke { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .marke::before { content: ""; width: 6px; height: 6px; border-radius: 2px; background: currentColor; }
+  .m-ha { color: var(--ha); background: var(--ha-weich); }
+  .m-ki { color: var(--ki); background: var(--ki-weich); }
+  .m-rag { color: var(--rag); background: var(--rag-weich); }
+  .m-dok { color: var(--dok); background: var(--dok-weich); }
+  .m-gr { color: var(--gr); background: var(--gr-weich); }
+
+  .tab { overflow-x: auto; margin: 16px 0; border: 1px solid var(--linie); border-radius: 10px; background: var(--flaeche); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 13px; vertical-align: top; border-bottom: 1px solid var(--linie); }
+  thead th { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--leise); background: var(--flaeche-2); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.k { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+
+  ul { max-width: 68ch; padding-left: 1.2em; }
+  li { margin-bottom: 7px; }
+
+  .zahlen { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 18px 0; }
+  .zahl { padding: 12px 14px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 10px; }
+  .zahl b { display: block; font-size: 21px; font-weight: 800; letter-spacing: -0.02em; }
+  .zahl span { display: block; font-size: 12.5px; color: var(--leise); margin-top: 2px; }
+
+  footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--linie); color: var(--leise); font-size: 13px; }
+  @media (max-width: 620px) { .huelle { padding: 0 14px 70px; } }
+</style>
+
+<div class="huelle">
+
+<header>
+  <div class="kennung">Sprechzettel · technische Runde · 11.10.2026</div>
+  <h1>Das Schaubild in zehn Minuten</h1>
+  <p class="lead">
+    Von links nach rechts, Station für Station. Jeder Abschnitt nennt die Stelle
+    im Bild, einen Satz zum Sagen und die Rückfrage, die dort erfahrungsgemäß
+    kommt.
+  </p>
+</header>
+
+<section>
+  <h2><span class="nr">00</span>Der Einstieg</h2>
+
+  <div class="sag">
+    <p>
+      „Eine Behörde bekommt kurzfristig ein Großvorhaben auf den Tisch und muss
+      wissen: welcher Raum ist betroffen, welche Themen sind relevant, welche
+      Daten braucht die vertiefte Prüfung. Das macht diese Anwendung — und
+      zwar <em>nachvollziehbar</em>, nicht als Blackbox."
+    </p>
+    <p>
+      „Die wichtigste Aussage zuerst: <strong>die KI bewertet nicht.</strong>
+      Sie sagt nicht, ob etwas zulässig ist oder raumverträglich. Sie stellt
+      fest, was im Untersuchungsraum liegt, gibt Ziele der Raumordnung im
+      Wortlaut wieder und benennt, was vertieft zu betrachten ist. Diese Grenze
+      zeigen wir offensiv — bei diesem Publikum schafft das mehr Vertrauen als
+      eine überzogene Agenten-Demo."
+    </p>
+  </div>
+
+  <p>
+    Dann auf das Bild zeigen und die Leserichtung erklären: <strong>in der
+    Mitte die orange Säule</strong> — das ist der Hauptagent, von dem jeder
+    Aufruf ausgeht. Links sein eigener Code, rechts die Subagenten, ganz rechts
+    die Dokumente. Jeder orange Pfeil geht hinaus, jeder grüne kommt zurück,
+    und auf den Pfeilen steht, was übergeben wird.
+  </p>
+
+  <div class="zahlen">
+    <div class="zahl"><b>1 + 5</b><span>Hauptagent und Subagenten</span></div>
+    <div class="zahl"><b>5</b><span>Werkzeuge des Hauptagenten</span></div>
+    <div class="zahl"><b>49</b><span>Original-PDF im Korpus</span></div>
+    <div class="zahl"><b>5.801</b><span>Chunks in der ChromaDB</span></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">01</span>Die Säule in der Mitte</h2>
+  <p class="wo">orange Spalte, <code>ScreeningAgent</code></p>
+
+  <div class="sag">
+    <p>
+      „Der Hauptagent arbeitet nicht selbst. Er entscheidet nur: in welcher
+      Reihenfolge, mit welchen Argumenten, welches Werkzeug. Er sucht keine
+      Layer, misst nichts, liest keine Karte und formuliert nicht einmal den
+      Abschlusstext."
+    </p>
+    <p>
+      „Das ist die Grundidee der ganzen Architektur: <strong>das Modell
+      entscheidet, was gefragt wird — der Code liefert, was gilt.</strong>
+      Deshalb kann ein Ausrutscher des Modells das Ergebnis unvollständig
+      machen, aber nicht falsch."
+    </p>
+  </div>
+
+  <div class="frage">
+    <p><b>„Warum hat er nur fünf Werkzeuge?"</b></p>
+    <p>
+      Weil wir gelernt haben, dass zwei Wege zum selben Ziel keine Redundanz
+      sind, sondern eine Einladung. Der Abschlusstext hatte zwei: ein Werkzeug
+      ließ den Subagenten formulieren und gab den Text zurück mit der
+      Anweisung, ihn unverändert weiterzureichen. Das Modell hat den ersten
+      Schritt übersprungen und selbst geschrieben. Seitdem gibt es jeden Weg
+      genau einmal — und die Werkzeuge, die zum Subagenten gehören, sind beim
+      Hauptagenten <em>entfernt</em>, nicht nur im Prompt abgeraten.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">02</span>Links: was feststeht</h2>
+  <p class="wo">weiße Kästen „Funktionen", davor blau die Maps-SDK-Aufrufe</p>
+
+  <div class="sag">
+    <p>
+      „Alles links ist fester Code. <code>bestimmeRegion</code> zum Beispiel:
+      die Zuordnung Gemeinde → Kreis → Planungsregion ist ein Nachschlagewerk,
+      keine Denkaufgabe. Würde das Modell das raten, wäre die Grundlage des
+      ganzen Screenings geraten."
+    </p>
+    <p>
+      „Blau sind die Aufrufe des ArcGIS Maps SDK, und an jedem steht, wo er
+      läuft: <em>lokal im Browser</em> oder <em>Abfrage am Dienst</em>."
+    </p>
+  </div>
+
+  <div class="frage">
+    <p><b>„Sind das Geoprocessing-Tools?"</b></p>
+    <p>
+      Nein, keine einzige. Ein <b>GP-Tool</b> läuft auf dem Server: Auftrag
+      hin, warten, Ergebnis zurück, Credits weg. Ein <b>Geometrie-Operator</b>
+      rechnet im Browser auf Geometrien, die schon im Speicher liegen —
+      Millisekunden, keine Credits. Eine <b>Layerabfrage</b> ist der dritte
+      Fall: die geht an den Dienst, ist aber eine ganz normale Abfrage, kein
+      Tool.
+    </p>
+    <p>
+      Bild dazu: das GP-Tool ist das Steueramt, der Operator der
+      Taschenrechner auf dem eigenen Tisch, die Layerabfrage der Anruf im
+      Archiv. Wir telefonieren mit dem Archiv und rechnen selbst.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">03</span>Schritt 1 — welche Belange überhaupt?</h2>
+  <p class="wo"><code>klaereBelange</code> → <span class="marke m-ki">BelangeAgent</span></p>
+
+  <div class="sag">
+    <p>
+      „Die erste echte Frage lautet: welche öffentlichen Belange kann ein
+      Vorhaben dieser Art berühren? Diese Frage haben wir dreimal falsch
+      beantworten lassen — einmal kamen alle acht Kategorien relevant zurück,
+      einmal keine, einmal genau eine. Jedes Mal hat das Modell
+      <em>geurteilt</em>."
+    </p>
+    <p>
+      „Heute urteilt es nicht, sondern <strong>liest</strong>. § 35 Absatz 3
+      Baugesetzbuch zählt die öffentlichen Belange auf, die einem
+      Außenbereichsvorhaben entgegenstehen können. Die Liste steht im Gesetz,
+      sie muss nicht erfunden werden."
+    </p>
+  </div>
+
+  <div class="frage">
+    <p><b>„Und was nicht in § 35 Abs. 3 steht?"</b></p>
+    <p>
+      Guter Punkt, das war unser Problem. <b>Wald steht dort nicht</b> — die
+      Waldumwandlung regelt § 39 Landesforstgesetz NRW. Der Wald fiel damit
+      systematisch aus dem Screening.
+    </p>
+    <p>
+      Die Lösung steht im Bild ganz rechts, grün: die <b>Ankernorm</b>. Für
+      jede der acht Kategorien ist die Norm hinterlegt, die den Tatbestand
+      trägt. Die wird <em>nicht gesucht</em>, sondern über ihre Fundstelle
+      geholt — kein Embedding, kein Rang. Sie kommt zurück oder sie steht nicht
+      im Korpus.
+    </p>
+    <p>
+      Der Messwert, der uns überzeugt hat: von den acht Tatbestandsnormen fand
+      die Suche <b>genau eine</b>. Dass § 35 zuverlässig kommt, liegt nicht an
+      guter Suchqualität — sondern daran, dass wir seine Fundstelle kennen.
+      Genau diese Kenntnis steht jetzt für alle acht im Katalog.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">04</span>Schritt 2 — zwei Recherchen gleichzeitig</h2>
+  <p class="wo"><code>recherchiere</code> → <span class="marke m-ki">RegionalplanAgent</span> <span class="marke m-ki">GesetzAgent</span></p>
+
+  <div class="sag">
+    <p>
+      „Je Kategorie laufen zwei Subagenten parallel. Warum getrennt? Ein
+      <strong>Regionalplan regelt Gebiete</strong> — ‚Vorranggebiet für den
+      Schutz der Natur‘. Ein <strong>Fachgesetz regelt Schutzgüter</strong> —
+      ‚Eingriffe in Natur und Landschaft‘. Wer beides in einem Auftrag fragt,
+      bekommt Vermischung; wer es trennt, bekommt zwei prüfbare Aussagen mit je
+      eigener Fundstelle."
+    </p>
+  </div>
+
+  <div class="frage">
+    <p><b>„Warum überhaupt Subagenten statt Werkzeuge?"</b></p>
+    <p>
+      Wegen des Kontexts. Eine RAG-Antwort umfasst mehrere Gesetzespassagen.
+      Liefe das im Hauptagenten, landete jede Passage in seiner
+      Nachrichtenhistorie — und die geht bei <em>jeder</em> weiteren
+      Modellrunde erneut mit. Nach einem Dutzend Recherchen ist der Kontext
+      aufgebläht. Im Subagenten bleiben die Passagen in dessen Kontext; zurück
+      kommen vier Zeilen. Der Volltext steht trotzdem im Ergebnispanel, weil
+      die Werkzeuge ihn direkt in den Speicher schreiben.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">05</span>Rechts außen: woher das Wissen kommt</h2>
+  <p class="wo">braune Spalte <span class="marke m-dok">Korpus</span>, lila <span class="marke m-rag">Ollama · ChromaDB</span></p>
+
+  <div class="sag">
+    <p>
+      „Rechts steht die Datengrundlage: <strong>49 amtliche PDF</strong>, so
+      veröffentlicht wie sie sind — 21 Gesetze und 28 Dateien über sieben
+      Planungsregionen. Die werden einmal zerlegt, von Ollama in Zahlen
+      übersetzt und in der ChromaDB abgelegt. Im Betrieb wird keine PDF mehr
+      gelesen."
+    </p>
+    <p>
+      „Und die Botschaft dahinter: <strong>KI braucht nicht viele Daten,
+      sondern zugängliche, strukturierte, verlässliche und interpretierbare
+      Daten.</strong>"
+    </p>
+  </div>
+
+  <h3>Wenn jemand auf Ollama und ChromaDB zeigt</h3>
+
+  <div class="tab">
+    <table>
+      <thead><tr><th>Baustein</th><th>Was es tut</th><th>Was es NICHT tut</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="k">Ollama</td>
+          <td>Lässt <code>embeddinggemma</code> laufen. Übersetzt Text in Zahlen, in denen Nähe Ähnlichkeit bedeutet. Zweimal im Einsatz: beim Aufbau für jeden Chunk, bei jeder Anfrage für die Frage — beides muss durch dasselbe Modell, sonst sind die Zahlen nicht vergleichbar.</td>
+          <td><strong>Erzeugt keinen Text.</strong> Formuliert nicht, fasst nicht zusammen, beantwortet nichts.</td>
+        </tr>
+        <tr>
+          <td class="k">ChromaDB</td>
+          <td>Die Vektordatenbank auf Platte. Hält je Chunk den Vektor, den Volltext und die Metadaten.</td>
+          <td><strong>Bewertet nichts.</strong> Liefert die nächsten Nachbarn eines Vektors, nicht die richtige Antwort.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sag">
+    <p>
+      „Das Backend ist <em>retrieval-only</em>. Es sucht und gibt Text zurück.
+      Es gibt dort kein Modell, das irgendetwas schlussfolgert — das passiert
+      ausschließlich in den Agenten im Browser."
+    </p>
+  </div>
+
+  <div class="frage">
+    <p><b>„Warum zwei Suchverfahren nebeneinander?"</b></p>
+    <p>
+      Ein <b>Embedding</b> findet Sinnverwandtschaft: ‚Gewässerrandstreifen‘
+      und ‚Uferbereich‘ liegen nah beieinander, auch ohne gemeinsames Wort. Das
+      ist stark — und blind, wenn es auf ein falsches Wort anspringt.
+      <b>BM25</b> zählt stumpf Wörter und ist unempfindlich: das Wort kommt vor
+      oder nicht.
+    </p>
+    <p>
+      Verrechnet werden am Ende nicht die Punktzahlen, sondern die
+      <b>Ränge</b> — eine Kosinus-Distanz und eine BM25-Punktzahl sind nicht
+      vergleichbar. Gemessen: ‚Waldumwandlung Genehmigung‘ (einschlägig)
+      erreicht bei BM25 9,80 Punkte, ‚Bundesliga‘ (abwegig) 12,44. Eine
+      absolute Stichwortgrenze wäre also genau falsch herum.
+    </p>
+    <p>
+      Deshalb sitzt die <b>Abstinenzschwelle</b> auf der Vektor-Ähnlichkeit:
+      unter 0,45 kommt eine leere Liste zurück statt sechs Paragraphen, die zum
+      Thema nichts sagen.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">06</span>Schritt 3 — der Untersuchungsraum</h2>
+  <p class="wo"><code>meldeRelevanz</code>, links mit dem blauen Puffer-Operator</p>
+
+  <div class="sag">
+    <p>
+      „Je Kategorie meldet der Agent, ob sie berührt sein kann, und mit welchem
+      Untersuchungsradius. Die Funktion zieht daraufhin einen geodätischen
+      Puffer — das ist die Zone, gegen die später verschnitten wird."
+    </p>
+    <p>
+      „Und hier eine Stelle, auf die ich stolz bin: <strong>der Radius wird
+      gegen die Dokumente geprüft.</strong> Steht die Zahl im Wortlaut einer
+      abgerufenen Passage, zeigen wir die Fundstelle. Steht sie nirgends,
+      bekommt der Chip einen Stern und im Tooltip den Vermerk, dass es eine
+      Modellannahme ist."
+    </p>
+  </div>
+
+  <div class="frage">
+    <p><b>„Und wie oft ist der Radius belegt?"</b></p>
+    <p>
+      Ehrliche Antwort: im letzten Lauf <b>in keinem einzigen Fall</b> — und
+      das ist kein Fehler, sondern ein Befund. Die Normen nennen
+      <em>Abstandsvorschriften</em>: fünf Meter Gewässerrandstreifen, 40 Meter
+      Anbauverbotszone an der Autobahn. Ein <em>Untersuchungsradius</em> für
+      ein Erstscreening liegt bei einer 150-Meter-Anlage aber im
+      Kilometerbereich. Das sind verschiedene Größen, und die zweite steht in
+      keinem Dokument.
+    </p>
+    <p>
+      Wir haben uns bewusst dagegen entschieden, eine eigene Formel zu
+      erfinden — die sähe belegt aus und wäre es nicht. Stattdessen ist jeder
+      Radius sichtbar als Modellannahme gekennzeichnet. <b>Das ist genau die
+      Linie der ganzen Demo:</b> lieber sagen, was man nicht weiß.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">07</span>Schritt 4 — was liegt da wirklich?</h2>
+  <p class="wo"><code>pruefeKategorie</code> → <span class="marke m-ki">LayerAgent</span> mit eigenem blauen SDK-Kasten</p>
+
+  <div class="sag">
+    <p>
+      „Jetzt erst wird die Karte abgefragt — und nur für Kategorien, die Plan
+      und Fachrecht als betroffen ausgewiesen haben. Das ist keine
+      Prompt-Bitte, sondern eine Sperre im Code: ohne Relevanzmeldung gibt es
+      keine Zone, und ohne Zone bricht die Abfrage ab."
+    </p>
+    <p>
+      „Der LayerAgent ist der einzige Subagent mit eigenen Werkzeugen. Er sucht
+      die passenden Layer, prüft ihre Felder und fragt sie ab."
+    </p>
+  </div>
+
+  <div class="frage">
+    <p><b>„Wie findet er den richtigen Layer?"</b></p>
+    <p>
+      Über die <b>Beschreibung</b>, nicht über den Titel. In diesem
+      Datenbestand steckt Einschlägiges oft unter unscheinbaren Namen:
+      Waldflächen sind eine <em>Klasse</em> in einem allgemeinen
+      Vegetationslayer, nicht ein Layer namens „Wald". Genau daran ist ein
+      früher Testlauf gescheitert — der Wald blieb unentdeckt, obwohl direkt
+      daneben welcher liegt.
+    </p>
+    <p>
+      Ein Layer kann auch <b>zwei Kategorien tragen</b>: „Vegetationsflächen"
+      enthält Wald <em>und</em> Landwirtschaft, unterschieden nur über ein
+      Attribut. Die Anwendung filtert das automatisch je Kategorie.
+    </p>
+  </div>
+
+  <div class="frage">
+    <p><b>„Und die Zahlen — kommen die vom Modell?"</b></p>
+    <p>
+      Nein, und das ist wichtig. Die Anzahl kommt aus
+      <code>queryFeatureCount()</code> und ist exakt. Dann wird jedes Objekt
+      mit <code>intersectionOperator</code> auf die Zone <em>zurechtgeschnitten</em>
+      und nur dieser Rest gemessen — sonst meldete man die Gesamtfläche der
+      getroffenen Polygone, bei großen Flächen ein Vielfaches.
+    </p>
+    <p>
+      Zwei Sperren sichern das ab, weil der Prompt allein nicht reichte: das
+      Modell hat Feldnamen frei erfunden und die Abfragen lieferten lautlos
+      null. Heute werden Feldnamen gegen das Schema geprüft, und null Treffer
+      <em>mit</em> Filter lösen eine Gegenprobe <em>ohne</em> Filter aus.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">08</span>Schritt 5 — der Abschlusstext</h2>
+  <p class="wo"><code>fasseZusammen</code> → <span class="marke m-ki">BerichtAgent</span>, „keine Werkzeuge"</p>
+
+  <div class="sag">
+    <p>
+      „Der letzte Subagent hat bewusst <strong>keine Werkzeuge</strong>. Er
+      kann nichts nachschlagen und nichts messen — genau das ist der Punkt. Er
+      bekommt fertige Zahlen und darf sie nur in Sätze gießen."
+    </p>
+    <p>
+      „Und weil ein Prompt kein Verlass ist, prüft der Code die Rückgabe:
+      <strong>jede Ziffernfolge im Text muss in den übergebenen Fakten
+      stehen.</strong> Rundet er 277 auf ‚rund 280‘, fliegt der ganze Text
+      raus."
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">09</span>Unten links: das Ergebnis</h2>
+  <p class="wo">grüner Kasten <code>Panel + Karte</code></p>
+
+  <div class="sag">
+    <p>
+      „Zum Schluss blendet die Anwendung alles aus und zeigt nur die
+      gefundenen Objekte — gefiltert <strong>über die ObjectIDs</strong>, nicht
+      über ein Attribut. Ein Attributfilter hat keinen Raumbezug und legte den
+      landesweiten Bestand über die Karte."
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="nr">10</span>Wenn Sie ehrlich schließen wollen</h2>
+
+  <p>
+    Der stärkste Abschluss bei diesem Publikum ist nicht die Funktionsliste,
+    sondern die Fehlergeschichte. Drei Beispiele, die zeigen, dass gemessen und
+    nicht geglaubt wurde:
+  </p>
+
+  <ul>
+    <li>
+      <strong>Die Relevanzfrage ist dreimal gekippt</strong> — 8 von 8
+      relevant, dann 0 von 8, dann genau 1. Der Denkfehler steckte im Kriterium
+      selbst: wir haben nach einer vorhabentypbezogenen Norm gefragt, aber ein
+      Plan regelt Gebiete und ein Gesetz Schutzgüter. Beide nennen „Windenergie"
+      fast nie beim Namen.
+    </li>
+    <li>
+      <strong>Die Radiusprüfung hat sich selbst betrogen.</strong> Sie meldete
+      5 von 8 Radien als belegt — belegt waren sie auf Absatznummern:
+      „§ 35 Abs. <em>3</em>" bestätigte einen 3.000-Meter-Radius. Seit die
+      Prüfung eine Längeneinheit verlangt, sagt sie die Wahrheit, und die
+      lautet: keiner ist belegt.
+    </li>
+    <li>
+      <strong>Eine Messung wurde als Serverfehler verworfen.</strong> Die
+      Erkennung für HTTP 429 suchte die bloße Zahl — und „429 Objekte" in einer
+      gültigen Antwort sah genauso aus. Heute zählt die Zahl nur noch in einem
+      Fehlerkontext.
+    </li>
+  </ul>
+
+  <div class="sag">
+    <p>
+      „Der rote Faden: <strong>alles, was stimmen muss, ist im Code
+      abgesichert</strong> — Feldprüfung, exakte Zählung, Verwerfen
+      unbelegter Filter, zwei Nachfass-Schritte, die Zahlenprüfung am Bericht.
+      Neue Anforderungen an das Modell gehören bei uns ins Werkzeug, nicht in
+      den Prompt."
+    </p>
+    <p>
+      „Und was wir nicht wissen, steht im Ergebnis — mit Stern."
+    </p>
+  </div>
+</section>
+
+<footer>
+  Räumliches Erstscreening eines raumbedeutsamen Vorhabens · ArcGIS Maps SDK for
+  JavaScript 5.1.20 · Esri-gehostete Modelle · Ollama/ChromaDB lokal ·
+  laufende Referenz: <code>CLAUDE.md</code> im Projekt.
+</footer>
+
+</div>
